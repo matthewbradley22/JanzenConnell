@@ -22,59 +22,47 @@ uniqueSp = unique(data$species)
 numYears = 50
 popSize = NULL
 avgDens = NULL
-parameterTests = tibble("dens" = NULL, "popSize" = NULL, "avgDens" = NULL)
 ### MAIN LOOP ####
 
-##Currently using for loops to determine parameters##
 
-for (i in seq(2, 7, by = 0.2)){
-  data <-  tibble("ID" = 1:numInd, "age" = sample(150, 50, replace = TRUE), 
-                  species = sample(numSpecies, 50, replace = TRUE), "xlocation" = runif(50, 0, 100), 
-                  "ylocation" = runif(50,0,100), "parentalDistance" = 0)
-  DensParam <-  i
-  popSize = NULL
-  avgDens = NULL
-  for(t in seq(0, numYears, by = deltaT)){ 
-    #grow
-    data$age = data$age + deltaT
-    #disperse seeds/
-    Ind = data[1, ]
-    babies <- dispersal(Ind, data$species, data$xlocation, data$ylocation)
-    #survival of seeds
-    babies <- seedPredation(babies, babies$parentalDistance)
-    data <- bind_rows(data, babies)
-    #Background death of adults. Death rate decreases with age
-    data <- backgroundDeath(data, data$age)
-    #Conspecific density death
-    livePastDens = NULL
-    for (i in 1:length(uniqueSp)){
-      sp = uniqueSp[i]
-      subPop = subset(data, species == sp)
-      survived <- densityPredation(subPop, subPop$age, subPop$ID, subPop$xlocation, subPop$ylocation)
-      livePastDens <-  bind_rows(livePastDens, survived)
-      livePastDens <- livePastDens[order(livePastDens$ID), ]
-    }
-    data <- livePastDens
-    #trees over max age die
-    data  <- filter(data, age <= 150)
-    
-    #Supplemental funs
-    
-    popSize = c(popSize, nrow(data))
-    
-    currentDens <- densSize(data$xlocation, data$ylocation)
-    avgDens <- c(avgDens, currentDens)
-    
-    
-    plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
-    
+for(t in seq(0, numYears, by = deltaT)){ 
+  #grow
+  data$age = data$age + deltaT
+  #disperse seeds/
+  Ind = data[1, ]
+  babies <- dispersal(Ind, data$species, data$xlocation, data$ylocation)
+  #survival of seeds
+  babies <- seedPredation(babies, babies$parentalDistance)
+  data <- bind_rows(data, babies)
+  #Background death of adults. Death rate decreases with age
+  data <- backgroundDeath(data, data$age)
+  #Conspecific density death
+  livePastDens = NULL
+  for (i in 1:length(uniqueSp)){
+    sp = uniqueSp[i]
+    subPop = subset(data, species == sp)
+    survived <- densityPredation(subPop, subPop$age, subPop$ID, subPop$xlocation, subPop$ylocation)
+    livePastDens <-  bind_rows(livePastDens, survived)
+    livePastDens <- livePastDens[order(livePastDens$ID), ]
   }
-  currentParams = tibble("dens" = DensParam, "popSize" = mean(popSize), "avgDens" = mean(avgDens))
-  parameterTests <- bind_rows(parameterTests, currentParams)
-  
-  
+  data <- livePastDens
+  #trees over max age die
+  data  <- filter(data, age <= 150)
+
+  #Supplemental funs
+
+  popSize = c(popSize, nrow(data))
+
+  currentDens <- densSize(data$xlocation, data$ylocation)
+  avgDens <- c(avgDens, currentDens)
+
+
+  plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
+
 }
-  
+
+}
+
 
 
 
