@@ -5,9 +5,13 @@ library(tidyverse)
 xsize = ysize = 100
 numInd = 50
 numSpecies = 3
-data <-  tibble("ID" = 1:numInd, "age" = sample(150, 50, replace = TRUE), 
+data <-  tibble("ID" = 1:numInd, "age" = sample(150, numInd, replace = TRUE), 
                  species = sample(numSpecies, 50, replace = TRUE), "xlocation" = runif(50, 0, 100), 
                  "ylocation" = runif(50,0,100), "parentalDistance" = 0)
+
+herbivores <- tibble("ID" = 1:numInd, "age" = sample(45, numInd, replace =TRUE), 
+                     species = sample(numSpecies, 50, replace = TRUE),
+                     "xlocation" = runif(50, 0, 100),  "ylocation" = runif(50,0,100))
 plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
 
 #Set up rates of birth/death/growth etc...
@@ -16,13 +20,14 @@ ageChange = deltaT
 maxAge = 150
 seeds = 10
 dispParam = 10 #dispersalParam
-DensParam = 2.5 #DensityParam
-DensParam1 = 200
+DensParam = 2 #DensityParam
+DensParam1 = 20
 uniqueSp = unique(data$species)
-numYears = 50
-popSize = NULL
-avgDens = NULL
+numYears = 150
+speciesPop = NULL
 ### MAIN LOOP ####
+
+##Currently using for loops to determine parameters##
 
 
 for(t in seq(0, numYears, by = deltaT)){ 
@@ -38,8 +43,8 @@ for(t in seq(0, numYears, by = deltaT)){
   data <- backgroundDeath(data, data$age)
   #Conspecific density death
   livePastDens = NULL
-  for (i in 1:length(uniqueSp)){
-    sp = uniqueSp[i]
+  for (k in 1:length(uniqueSp)){
+    sp = uniqueSp[k]
     subPop = subset(data, species == sp)
     survived <- densityPredation(subPop, subPop$age, subPop$ID, subPop$xlocation, subPop$ylocation)
     livePastDens <-  bind_rows(livePastDens, survived)
@@ -48,24 +53,25 @@ for(t in seq(0, numYears, by = deltaT)){
   data <- livePastDens
   #trees over max age die
   data  <- filter(data, age <= 150)
-
+  
   #Supplemental funs
-
-  popSize = c(popSize, nrow(data))
-
-  currentDens <- densSize(data$xlocation, data$ylocation)
-  avgDens <- c(avgDens, currentDens)
-
-
+  countSpecies <- speciesSize(data$species)
+  speciesPop <-  bind_rows(speciesPop, countSpecies)
+  
+  #Herbivores damage trees
+  
+  #Herbivores reproduce
+  
+  #Herbivores die
+  
+  
   plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
+  
+  
 
 }
 
-}
-
-
-
-
+plotSpecies(speciesPop)
 
 
 ##### MAIN FUNCTIONS #######
@@ -90,7 +96,7 @@ dispersal <- function(Ind, species, xlocation, ylocation){
       }
     }
     return(babies)
-    #babies going over borders of ecosystem, fix  that later
+    
 }
 
 
@@ -165,10 +171,39 @@ densSize <- function(xlocation, ylocation){
   return(mean(Densities))
 }
 
-plot(densSize)
+
+speciesSize <- function(speciesTypes){
+  a = speciesTypes[speciesTypes == 1]
+  b = speciesTypes[speciesTypes == 2]
+  c = speciesTypes[speciesTypes == 3]
+  
+  df <- tibble("Species 1" = length(a), "Species 2" = length(b), "Species 3" = length(c))
+  return(df)
+}
+
+plotSpecies <- function(speciesPop){
+  speciesPop <- add_column(speciesPop, gen = 1:nrow(speciesPop))
+  speciesPop <- pivot_longer(speciesPop, cols = starts_with("Species"), names_to = "Species",
+                             names_prefix = "Species ", values_to = "Count")
+  ggplot(data = speciesPop, aes(gen, Count, col = Species))+
+    geom_point()+
+    geom_line()+
+    ylim(0, max(speciesPop$Count))
+  
+}
+#If want to track pop/dens put this in main loop and recreate variables popSize and avgDens
+popSize = c(popSize, nrow(data))
+currentDens <- densSize(data$xlocation, data$ylocation)
+avgDens <- c(avgDens, currentDens)
+
+
 
 #Only one tree in comp should die if multiple trees in area?
 #Redo function driving density dependence
-
-
+#Species by species population parameters
+#How to find good papers
+#Still running simulation
+#mechanistic details. Model individual enemies
+#Site occupancy model
+#Quantify how species does when low vs high
 
