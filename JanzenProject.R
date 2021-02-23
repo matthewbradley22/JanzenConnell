@@ -59,7 +59,7 @@ for(t in seq(0, numYears, by = deltaT)){
   speciesPop <-  bind_rows(speciesPop, countSpecies)
   
   #Herbivores damage trees
-  
+  data = herbivory(data, herbivores)
   #Herbivores reproduce
   
   #Herbivores die
@@ -152,6 +152,26 @@ backgroundDeath <- function(population, age){
   return(population[living,])
 }
 
+#Herbivory function: herbivores kill trees
+herbivory <- function(trees, herbivores){
+  df <- tibble("tx" = trees$xlocation, "ty" = trees$ylocation, "tspecies" = trees$species,
+               "hx" = herbivores$xlocation, "hy" = herbivores$ylocation, 
+               "hspecies" = herbivores$species)
+  treePop = trees
+  alive = NULL
+  for (i in 1:nrow(trees)){
+    ind = df[i, 1:2]
+    xHerbivores <- subset(df, hx < ind$tx + 4 & hx > ind$tx - 4)
+    yHerbivores <- subset(df, hy < ind$ty + 4 & hy > ind$ty - 4)
+    predators = bind_rows(xHerbivores, yHerbivores)
+    predators <- subset(predators, tspecies == hspecies)
+    probSurvive = treePop[i, ]$age/((nrow(predators) + 1)*60)
+    surv = probSurvive > (0.1)
+    alive = c(alive, surv)
+  }
+  return(trees[alive, ])
+}
+
 
 ### SUPPLEMENTAL FUNCTIONS###
 
@@ -171,7 +191,7 @@ densSize <- function(xlocation, ylocation){
   return(mean(Densities))
 }
 
-
+#Track population of each species
 speciesSize <- function(speciesTypes){
   a = speciesTypes[speciesTypes == 1]
   b = speciesTypes[speciesTypes == 2]
@@ -181,6 +201,8 @@ speciesSize <- function(speciesTypes){
   return(df)
 }
 
+
+#Plot amount of each species
 plotSpecies <- function(speciesPop){
   speciesPop <- add_column(speciesPop, gen = 1:nrow(speciesPop))
   speciesPop <- pivot_longer(speciesPop, cols = starts_with("Species"), names_to = "Species",
@@ -192,6 +214,7 @@ plotSpecies <- function(speciesPop){
   
 }
 #If want to track pop/dens put this in main loop and recreate variables popSize and avgDens
+#Then use plotSize and densSize functions
 popSize = c(popSize, nrow(data))
 currentDens <- densSize(data$xlocation, data$ylocation)
 avgDens <- c(avgDens, currentDens)
