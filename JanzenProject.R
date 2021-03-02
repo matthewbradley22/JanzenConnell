@@ -1,5 +1,6 @@
 #Load packages
 library(tidyverse) 
+library(gridExtra)
 # Set up a grid to represent land
 #Place individuals on plot
 xsize = ysize = 100
@@ -9,8 +10,8 @@ data <-  tibble("ID" = 1:numInd, "age" = sample(150, numInd, replace = TRUE),
                  species = sample(numSpecies, 50, replace = TRUE), "xlocation" = runif(50, 0, 100), 
                  "ylocation" = runif(50,0,100), "parentalDistance" = 0)
 
-herbivores <- data %>%  slice_sample(n = 3) %>% select(-c(ID, age, parentalDistance)) %>%
-  mutate(ID = 1:nrow(herbivores), age = 0)
+herbivores <- data %>%  slice_sample(n = 10) %>% select(-c(ID, age, parentalDistance))
+herbivores <- herbivores %>% mutate(ID = 1:nrow(herbivores), age = 0)
 plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
 
 #Set up rates of birth/death/growth etc...
@@ -19,13 +20,14 @@ ageChange = deltaT
 maxAge = 150
 seeds = 10
 dispParam = 10 #dispersalParam
-DensParam = 2 #DensityParam
-DensParam1 = 20
+DensParam = 3.2 #DensityParam
+DensParam1 = 200
 uniqueSp = unique(data$species)
 numYears = 150
 herbParam1 = 100
 herbParam2 = 10
 speciesPop = NULL
+herbPop = NULL
 ### MAIN LOOP ####
 
 ##Currently using for loops to determine parameters##
@@ -34,6 +36,7 @@ speciesPop = NULL
 for(t in seq(0, numYears, by = deltaT)){ 
   #grow
   data$age = data$age + deltaT
+  herbivores$age = herbivores$age + 1
   #disperse seeds/
   Ind = data[1, ]
   babies <- dispersal(Ind, data$species, data$xlocation, data$ylocation)
@@ -55,24 +58,35 @@ for(t in seq(0, numYears, by = deltaT)){
   #trees over max age die
   data  <- filter(data, age <= 150)
   
-  #Supplemental funs
-  countSpecies <- speciesSize(data$species)
-  speciesPop <-  bind_rows(speciesPop, countSpecies)
-  
-  #Herbivores damage trees
-  data = herbivory(data, herbivores)
-  #Herbivores reproduce
   
   #Herbivores die
+  herbivores <- herbivoreDeath(data, herbivores)
+  
+  #Herbivores reproduce
+  newHerbivores <- herbivoreGrowth(data, herbivores)
+  herbivores <- bind_rows(herbivores, newHerbivores)
+  herbivores <- herbivores[!duplicated(herbivores$xlocation) & !duplicated(herbivores$ylocation),]
+  
+  #Herbivores damage trees
+  data <-  herbivory(data, herbivores)
   
   
   plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
   
+  #Supplemental funs
+  countSpecies <- speciesSize(data$species)
+  speciesPop <-  bind_rows(speciesPop, countSpecies)
+  countHerbs <- speciesSize(herbivores$species)
+  herbPop <- bind_rows(herbPop, countHerbs)
   
 
 }
 
-plotSpecies(speciesPop)
+grid.arrange(plotSpecies(speciesPop), plotHerbSpecies(herbPop), ncol = 1)
+plot(herbivores$xlocation, herbivores$ylocation, col = herbivores$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
+
+
+
 
 
 ##### MAIN FUNCTIONS #######
@@ -153,15 +167,23 @@ backgroundDeath <- function(population, age){
   return(population[living,])
 }
 
+
+
+
+
+
+#### HERBIVORY STUFF ######
+
+
 #Herbivory function: herbivores kill trees
 herbivory <- function(trees, herbivores){
   deadTrees = NULL
   for (i in 1:nrow(herbivores)){
     indHerbivore = herbivores[i, ]
     infected = data[data$xlocation == indHerbivore$xlocation  & data$ylocation == indHerbivore$ylocation, ]
-    probSurv = (infected$age / (((indHerbivore$age)+1)*6))
+    probSurv = (infected$age / (((indHerbivore$age)+1)*7))
     survived= (probSurv > runif(1))
-    if(survived == FALSE){
+    if(!isTRUE(survived)){
       deadTrees <- bind_rows(deadTrees, infected)
     }
   }
@@ -169,9 +191,49 @@ herbivory <- function(trees, herbivores){
   return(subset(trees, !(ID %in% deadID)))
 }
 
-herbivoreGrowth <- function(herbivores){
-  
+herbivoreGrowth <- function(trees, herbivores){
+  infectedTrees <- NULL
+  herbivoreLocs <- tibble(x = herbivores$xlocation, y = herbivores$ylocation)
+  for (i in 1:nrow(herbivores)){
+    indHerbivore <- herbivores[i, ]
+    for (j in 1:3){
+      xDisplacement <- (indHerbivore$xlocation + rnorm(1,0, sd = 6))
+      yDisplacement <- (indHerbivore$ylocation + rnorm(1,0, sd = 6))
+      infectedTree <- subset(trees, xlocation > xDisplacement - 5 & xlocation < xDisplacement + 5 &
+                               ylocation > yDisplacement - 5 & ylocation < yDisplacement + 5 &
+                               xlocation != indHerbivore$xlocation & ylocation != indHerbivore$ylocation &
+                               species == indHerbivore$species)
+      infectedTrees <- bind_rows(infectedTrees, infectedTree)
+    }
+  }
+  if(nrow(infectedTrees) > 0){
+    newHerbivores <- infectedTrees %>%  select(-c(parentalDistance, ID, age)) %>% 
+      mutate(ID = seq(max(herbivores$ID)+1, 
+      max(herbivores$ID)+nrow(infectedTrees)), age = 0)
+  }else{
+    newHerbivores <- NULL
+  }
+  return(newHerbivores)
 }
+
+herbivoreDeath <- function(trees, herbivores){
+  dead = NULL
+  totalInf = NULL
+  for (i in 1:nrow(herbivores)){
+    indHerbivore = herbivores[i, ]
+    infected = data[data$xlocation == indHerbivore$xlocation  & data$ylocation == indHerbivore$ylocation, ]
+    if (nrow(infected) < 1){
+      dead <- bind_rows(dead, indHerbivore)
+    }
+  }
+  herbID = dead$ID
+  return(subset(herbivores, !(ID %in% herbID)))
+}
+
+
+
+
+
 
 ### SUPPLEMENTAL FUNCTIONS###
 
@@ -210,7 +272,19 @@ plotSpecies <- function(speciesPop){
   ggplot(data = speciesPop, aes(gen, Count, col = Species))+
     geom_point()+
     geom_line()+
-    ylim(0, max(speciesPop$Count))
+    ylim(0, max(speciesPop$Count))+
+    ylab("Tree Count")
+  
+}
+plotHerbSpecies <- function(speciesPop){
+  speciesPop <- add_column(speciesPop, gen = 1:nrow(speciesPop))
+  speciesPop <- pivot_longer(speciesPop, cols = starts_with("Species"), names_to = "Species",
+                             names_prefix = "Species ", values_to = "Count")
+  ggplot(data = speciesPop, aes(gen, Count, col = Species))+
+    geom_point()+
+    geom_line()+
+    ylim(0, max(speciesPop$Count))+
+    ylab("Herbivore Count")
   
 }
 #If want to track pop/dens put this in main loop and recreate variables popSize and avgDens
@@ -218,10 +292,4 @@ plotSpecies <- function(speciesPop){
 popSize = c(popSize, nrow(data))
 currentDens <- densSize(data$xlocation, data$ylocation)
 avgDens <- c(avgDens, currentDens)
-
-
-
-
-
-
 
