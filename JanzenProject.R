@@ -10,7 +10,7 @@ data <-  tibble("ID" = 1:numInd, "age" = sample(150, numInd, replace = TRUE),
                  species = sample(numSpecies, 50, replace = TRUE), "xlocation" = runif(50, 0, 100), 
                  "ylocation" = runif(50,0,100), "parentalDistance" = 0)
 
-herbivores <- data %>%  slice_sample(n = 10) %>% select(-c(ID, age, parentalDistance))
+herbivores <- data %>%  slice_sample(n = 25) %>% select(-c(ID, age, parentalDistance))
 herbivores <- herbivores %>% mutate(ID = 1:nrow(herbivores), age = 0)
 plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
 
@@ -21,7 +21,7 @@ maxAge = 150
 seeds = 10
 dispParam = 10 #dispersalParam
 DensParam = 3.2 #DensityParam
-DensParam1 = 200
+DensParam1 = 290
 uniqueSp = unique(data$species)
 numYears = 150
 herbParam1 = 100
@@ -79,6 +79,7 @@ for(t in seq(0, numYears, by = deltaT)){
   countHerbs <- speciesSize(herbivores$species)
   herbPop <- bind_rows(herbPop, countHerbs)
   
+  print(t)
 
 }
 
@@ -181,7 +182,7 @@ herbivory <- function(trees, herbivores){
   for (i in 1:nrow(herbivores)){
     indHerbivore = herbivores[i, ]
     infected = data[data$xlocation == indHerbivore$xlocation  & data$ylocation == indHerbivore$ylocation, ]
-    probSurv = (infected$age / (((indHerbivore$age)+1)*7))
+    probSurv = (infected$age+6 / (((indHerbivore$age)+1)*150))
     survived= (probSurv > runif(1))
     if(!isTRUE(survived)){
       deadTrees <- bind_rows(deadTrees, infected)
@@ -292,4 +293,8 @@ plotHerbSpecies <- function(speciesPop){
 popSize = c(popSize, nrow(data))
 currentDens <- densSize(data$xlocation, data$ylocation)
 avgDens <- c(avgDens, currentDens)
+
+
+
+
 
