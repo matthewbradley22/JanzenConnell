@@ -28,6 +28,7 @@ herbParam1 = 100
 herbParam2 = 10
 speciesPop = NULL
 herbPop = NULL
+agePops = NULL
 ### MAIN LOOP ####
 
 ##Currently using for loops to determine parameters##
@@ -80,6 +81,11 @@ for(t in seq(0, numYears, by = deltaT)){
   #Herbivores damage trees
   data <-  herbivory(data, herbivores)
   
+  ages <- tibble("gen" = t, "young" = nrow(subset(data, age <= 20)), "middle aged" = nrow(subset(data, age > 20 &
+                                                                                                   age < 50)), 
+                 "old" = nrow(subset(data, age >= 50)))
+  
+  agePops <- bind_rows(agePops, ages)
   
   plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
   
@@ -90,6 +96,9 @@ for(t in seq(0, numYears, by = deltaT)){
 }
 
 grid.arrange(plotSpecies(speciesPop), plotHerbSpecies(herbPop), ncol = 1)
+agePops <-  pivot_longer(agePops, cols = !gen, names_to = "Group", values_to = "Count")
+ggplot(agePops, aes(gen, Count, color = Group))+
+  geom_line()
 plot(herbivores$xlocation, herbivores$ylocation, col = herbivores$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
 
 
@@ -188,7 +197,7 @@ herbivory <- function(trees, herbivores){
   for (i in 1:nrow(herbivores)){
     indHerbivore = herbivores[i, ]
     infected = data[data$xlocation == indHerbivore$xlocation  & data$ylocation == indHerbivore$ylocation, ]
-    probSurv = ((infected$age+6) / (((indHerbivore$age)+1)*1))
+    probSurv = ((infected$age+6) / (((indHerbivore$age)+1)*20))
     survived= (probSurv > runif(1))
     if(!isTRUE(survived)){
       deadTrees <- bind_rows(deadTrees, infected)
@@ -211,8 +220,8 @@ herbivoreGrowth <- function(trees, herbivores){
     #                            species == indHerbivore$species)
     #   infectedTrees <- bind_rows(infectedTrees, infectedTree)
     # }
-    infectedTree <- subset(trees, xlocation > indHerbivore$xlocation - 100 & xlocation < indHerbivore$xlocation + 100 &
-                            ylocation > indHerbivore$ylocation - 100 & ylocation < indHerbivore$ylocation + 100 &
+    infectedTree <- subset(trees, xlocation > indHerbivore$xlocation - 12 & xlocation < indHerbivore$xlocation + 12 &
+                            ylocation > indHerbivore$ylocation - 12 & ylocation < indHerbivore$ylocation + 12 &
                             xlocation != indHerbivore$xlocation & ylocation != indHerbivore$ylocation &
                            species == indHerbivore$species)
     infectedTrees <- bind_rows(infectedTrees, infectedTree)
@@ -314,5 +323,4 @@ avgDens <- c(avgDens, currentDens)
 #Site occupancy model
 #Quantify how species does when low vs high
 #way to numerically track species density/proximity to others
-#Quantify how species does when low vs high
 
