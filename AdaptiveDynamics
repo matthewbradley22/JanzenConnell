@@ -1,0 +1,26 @@
+What are the trait(s) of interest in our simulation?
+  What traits do plants have in the simulation?
+    
+  What traits do pathogens have in the simulation?
+
+
+Assume one plant trait of interest is the ability of the plant to narrow potential pathogens. Some plants might be great at narrowing 
+potential pathogens and only have one pathogen species that attacks them. Others might not narrow potential pathogens at all, and be 
+susceptible to infection by all pathogen species. Other plants might be in between, susceptible to infection by just a few species. 
+What is the benefit of being susceptible to many pathogens? Said another way, what is the cost of narrowing potential pathogens? 
+We expect there should be some tradeoff, but what is the tradeoff?
+From the viewpoint of the pathogens, what do pathogens lose by being generalists? What do specialist pathogens gain by being specialists?
+
+
+Assume we are developing a pairwise invasion plot (PIP) for a trait of interest in the model. 
+Sketch out the axes, which should be the resident trait value and the invader trait value.
+Using the PIP, we can think about competing different “strategies” or trait values. 
+Each strategy can be thought of as a different species. If the resident and invader both have the same 
+trait value or “strategy”, then we expect that they will do equally well. For our model, reason through what we
+might expect to happen in the two extreme cases, which are (1) the top left corner of the PIP plot and (2) the 
+bottom right corner of the PIP plot. Do you think that the invader trait would be able to grow and succeed in an 
+environment full of residents in each case, and why do you think that would happen? There are no right or wrong answers – 
+this is just an educated guess. Hopefully we will be able to definitively answer this question with our research in future weeks!
+Imagine that we are able to make a PIP plot for a trait of interest, and we find a trait value that is an evolutionary 
+stable strategy. What would this mean in the context of the Janzen-Connell hypothesis and our model?
+Imagine that we make a PIP and see a region of coexistence. What would this mean in the context of the Janzen-Connell hypothesis and our model?
