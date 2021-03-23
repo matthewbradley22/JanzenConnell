@@ -27,18 +27,16 @@ dispParam = 10 #dispersalParam
 DensParam = 4 #DensityParam
 DensParam1 = 2
 uniqueSp = unique(data$species)
-numYears = 1000
+numYears = 10000
 
 #Herbivore initials
-herbParam1 = 100
-herbParam2 = 10
-HerbDensParam = 7.5
-HerbEffectiveness = 4
+HerbDensParam = 4.8
+HerbEffectiveness = 2.3
 
 speciesPop = NULL
 herbPop = NULL
 agePops = NULL
-
+herbAgePop = NULL
 
 
 
@@ -92,14 +90,21 @@ for(t in seq(0, numYears, by = deltaT)){
   #Herbivores damage trees
   data <-  herbivory(data, herbivores)
   
+  
+  #Supp  functions
   ages <- tibble("gen" = t, "babies" = nrow(subset(data, age < 6)), "young" = nrow(subset(data, age >= 6 & age <=20)), "middle aged" = nrow(subset(data, age > 20 &
                                                                                                    age < 50)), 
                  "old" = nrow(subset(data, age >= 50)))
   
-  agePops <- bind_rows(agePops, ages)
+  herbAges <- tibble("gen" = t, "babies" = nrow(subset(herbivores, age < 6)), 
+                     "young" = nrow(subset(herbivores, age >= 6 & age <=20)),
+                     "middle aged" = nrow(subset(herbivores, age > 20 &                                                                                                                                 age < 50)), 
+                     "old" = nrow(subset(herbivores, age >= 50)))
   
-  plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
-
+  agePops <- bind_rows(agePops, ages)
+  herbAgePop <- bind_rows(herbAgePop, herbAges)
+  #plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
+  #plot(herbivores$xlocation, herbivores$ylocation, col = herbivores$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
   
   print(t)
 
@@ -109,14 +114,26 @@ for(t in seq(0, numYears, by = deltaT)){
 grid.arrange(plotSpecies(speciesPop), plotHerbSpecies(herbPop), ncol = 1)
 
 #Plot the age distribution over time of trees
-agePops <-  pivot_longer(agePops, cols = !gen, names_to = "Group", values_to = "Count")
-ggplot(agePops, aes(gen, Count, color = Group))+
+agePops1 <-  pivot_longer(agePops, cols = !gen, names_to = "Group", values_to = "Count")
+agePopGraph <- ggplot(agePops1, aes(gen, Count, color = Group))+
   geom_line()
-#Plot total ages of trees throughout generations
-ageBar <-  agePops %>% group_by(Group) %>% summarise(total = sum(Count))
-barplot(ageBar$total, names.arg = ageBar$Group, col=c(rgb(0.3,0.1,0.4,0.6) , rgb(0.3,0.5,0.4,0.6) , rgb(0.3,0.9,0.4,0.6) ,  rgb(0.8,0.5,0.4,0.6)))
+
+herbAgePop1 <-  pivot_longer(herbAgePop, cols = !gen, names_to = "Group", values_to = "Count")
+herbAgeGraph <- ggplot(herbAgePop1, aes(gen, Count, color = Group))+
+  geom_line()
+
+grid.arrange(agePopGraph, herbAgeGraph, ncol = 1)
 
 
+#plot adult pop
+herbivoreOld <- subset(herbivores, age > 50)
+herbAgePopOld <-  pivot_longer(herbivoreOld, cols = !gen, names_to = "Group", values_to = "Count")
+herbAgeGraph <- ggplot(herbAgePopOld, aes(gen, Count, color = Group))+
+  geom_line()
+
+
+agePopGraph <- ggplot(agePops, aes(gen, old))+
+  geom_line()
 
 
 ##### MAIN FUNCTIONS #######
@@ -210,8 +227,8 @@ herbivory <- function(trees, herbivores){
   for (i in 1:nrow(herbivores)){
     indHerbivore = herbivores[i, ]
     infected = data[data$xlocation == indHerbivore$xlocation  & data$ylocation == indHerbivore$ylocation, ]
-    probSurv = (((infected$age+1)) / (((indHerbivore$age)+1)*HerbEffectiveness))
-    if(probSurv < runif(1)){
+    probSurv = (((infected$age+3)) / (((indHerbivore$age)+1)*HerbEffectiveness))
+    if(probSurv < 1){
       deadTrees <- bind_rows(deadTrees, infected)
     }
   }
@@ -325,6 +342,7 @@ plotHerbSpecies <- function(speciesPop){
 popSize = c(popSize, nrow(data))
 currentDens <- densSize(data$xlocation, data$ylocation)
 avgDens <- c(avgDens, currentDens)
+
 
 
 
