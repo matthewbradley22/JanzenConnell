@@ -1,13 +1,18 @@
 What are the trait(s) of interest in our simulation?
   What traits do plants have in the simulation?
-    
+    Susceptibility to generalist and specific pathogens.
   What traits do pathogens have in the simulation?
-
+    Ability to be generalist pathogens versus species-specific pathogens
 
 Assume one plant trait of interest is the ability of the plant to narrow potential pathogens. Some plants might be great at narrowing 
 potential pathogens and only have one pathogen species that attacks them. Others might not narrow potential pathogens at all, and be 
 susceptible to infection by all pathogen species. Other plants might be in between, susceptible to infection by just a few species. 
-What is the benefit of being susceptible to many pathogens? Said another way, what is the cost of narrowing potential pathogens? 
+
+What is the benefit of being susceptible to many pathogens? Said another way, what is the cost of narrowing potential pathogens?
+  Fitness costs of developing resistance to pathogens. A plant that invests in pathogen resistance may be less fit in absence of pathogen infection. For example, 
+  if a host is using resources to block pathogens, it may require more nutrients or be more temperature sensitive than plants that do not expend energy resisting 
+  pathogens.
+
 We expect there should be some tradeoff, but what is the tradeoff?
 From the viewpoint of the pathogens, what do pathogens lose by being generalists? What do specialist pathogens gain by being specialists?
 
