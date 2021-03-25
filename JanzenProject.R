@@ -343,9 +343,3 @@ popSize = c(popSize, nrow(data))
 currentDens <- densSize(data$xlocation, data$ylocation)
 avgDens <- c(avgDens, currentDens)
 
-
-
-
-
-
-
