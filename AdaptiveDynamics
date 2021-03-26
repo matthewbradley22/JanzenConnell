@@ -27,14 +27,24 @@ We expect there should be some tradeoff, but what is the tradeoff?
 From the viewpoint of the pathogens, what do pathogens lose by being generalists? What do specialist pathogens gain by being specialists?
 
 
+  Pathogens may be less efficient at infecting a host if they are generalist, because they do not develop specific mechanisms for a single host species. This means that,
+  while the generalist may live on a wider range of hosts, it may never live as efficiently as host-specific pathogens.
+
 Assume we are developing a pairwise invasion plot (PIP) for a trait of interest in the model. 
 Sketch out the axes, which should be the resident trait value and the invader trait value.
+
+  axes represent preference for specific versus general behavior from pathogens? Or emphasis on pathogen protection from trees?
+  
 Using the PIP, we can think about competing different “strategies” or trait values. 
 Each strategy can be thought of as a different species. If the resident and invader both have the same 
 trait value or “strategy”, then we expect that they will do equally well. For our model, reason through what we
 might expect to happen in the two extreme cases, which are (1) the top left corner of the PIP plot and (2) the 
 bottom right corner of the PIP plot. Do you think that the invader trait would be able to grow and succeed in an 
-environment full of residents in each case, and why do you think that would happen? There are no right or wrong answers – 
+environment full of residents in each case, and why do you think that would happen? 
+
+  Completely general vs completely specific.
+
+There are no right or wrong answers – 
 this is just an educated guess. Hopefully we will be able to definitively answer this question with our research in future weeks!
 Imagine that we are able to make a PIP plot for a trait of interest, and we find a trait value that is an evolutionary 
 stable strategy. What would this mean in the context of the Janzen-Connell hypothesis and our model?
