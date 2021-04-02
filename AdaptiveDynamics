@@ -2,13 +2,13 @@ What are the trait(s) of interest in our simulation?
 
 What traits do plants have in the simulation?
   
-    Susceptibility to generalist and specific pathogens.
+    Susceptibility to generalist and specific pathogens. Energy investment into resisting pathogens that could be used for
+    higher reproduction. Means that trees that invest in high resistance will fare worse in absence of pathogens.
     
  What traits do pathogens have in the simulation?
  
-    Ability to be generalist pathogens versus species-specific pathogens
-
-
+    Ability to be generalist pathogens versus species-specific pathogens. Species-specific pathogens may be able to more efficiently
+    gain energy from trees they infect. This means they will be better able to invest in reproduction than general pathogens.
 
 
 
@@ -28,7 +28,7 @@ From the viewpoint of the pathogens, what do pathogens lose by being generalists
 
 
   Pathogens may be less efficient at infecting a host if they are generalist, because they do not develop specific mechanisms for a single host species. This means that,
-  while the generalist may live on a wider range of hosts, it may never live as efficiently as host-specific pathogens.
+  while the generalist may live on a wider range of hosts, it may never live as efficiently as host-specific pathogens. This will limit reproduction rate.
 
 Assume we are developing a pairwise invasion plot (PIP) for a trait of interest in the model. 
 Sketch out the axes, which should be the resident trait value and the invader trait value.
@@ -42,10 +42,21 @@ might expect to happen in the two extreme cases, which are (1) the top left corn
 bottom right corner of the PIP plot. Do you think that the invader trait would be able to grow and succeed in an 
 environment full of residents in each case, and why do you think that would happen? 
 
-  Completely general vs completely specific.
+  Completely general vs completely specific. If there is a population full of completely general pathogens that live inefficiently due to not 
+  evolving to efficiently extract energy from one species, then I believe a completely specific pathogen will replace the general species
+  on the type of tree that it is adapted to. However, if there is a population full of completely "specific" pathogens, it may be difficult
+  for a generalist to break in to the population. This probably depends on other factors (how many trees are not infected/how efficient
+  "specific" pathogens are at spreading to other trees of the species they infect).
 
 There are no right or wrong answers – 
 this is just an educated guess. Hopefully we will be able to definitively answer this question with our research in future weeks!
 Imagine that we are able to make a PIP plot for a trait of interest, and we find a trait value that is an evolutionary 
 stable strategy. What would this mean in the context of the Janzen-Connell hypothesis and our model?
+
+If a tree strategy becomes evolutionarily stable, then presumably Janzen-Connell effects will no longer play a role in causing it to evolve in 
+a certain direction (because the strategy will no longer be undergoing evolution). Would this mean that Janzen-Connell could not be the only driver
+of diversity?
+
 Imagine that we make a PIP and see a region of coexistence. What would this mean in the context of the Janzen-Connell hypothesis and our model?
+
+
