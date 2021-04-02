@@ -110,30 +110,6 @@ for(t in seq(0, numYears, by = deltaT)){
 
 }
 
-#Plot pathogen vs trees
-grid.arrange(plotSpecies(speciesPop), plotHerbSpecies(herbPop), ncol = 1)
-
-#Plot the age distribution over time of trees
-agePops1 <-  pivot_longer(agePops, cols = !gen, names_to = "Group", values_to = "Count")
-agePopGraph <- ggplot(agePops1, aes(gen, Count, color = Group))+
-  geom_line()
-
-herbAgePop1 <-  pivot_longer(herbAgePop, cols = !gen, names_to = "Group", values_to = "Count")
-herbAgeGraph <- ggplot(herbAgePop1, aes(gen, Count, color = Group))+
-  geom_line()
-
-grid.arrange(agePopGraph, herbAgeGraph, ncol = 1)
-
-
-#plot adult pop
-herbivoreOld <- subset(herbivores, age > 50)
-herbAgePopOld <-  pivot_longer(herbivoreOld, cols = !gen, names_to = "Group", values_to = "Count")
-herbAgeGraph <- ggplot(herbAgePopOld, aes(gen, Count, color = Group))+
-  geom_line()
-
-
-agePopGraph <- ggplot(agePops, aes(gen, old))+
-  geom_line()
 
 
 ##### MAIN FUNCTIONS #######
@@ -286,7 +262,30 @@ herbivoreDeath <- function(trees, herbivores){
 
 
 ### SUPPLEMENTAL FUNCTIONS###
+#Plot pathogen vs trees
+grid.arrange(plotSpecies(speciesPop), plotHerbSpecies(herbPop), ncol = 1)
 
+#Plot the age distribution over time of trees
+agePops1 <-  pivot_longer(agePops, cols = !gen, names_to = "Group", values_to = "Count")
+agePopGraph <- ggplot(agePops1, aes(gen, Count, color = Group))+
+  geom_line()
+
+herbAgePop1 <-  pivot_longer(herbAgePop, cols = !gen, names_to = "Group", values_to = "Count")
+herbAgeGraph <- ggplot(herbAgePop1, aes(gen, Count, color = Group))+
+  geom_line()
+
+grid.arrange(agePopGraph, herbAgeGraph, ncol = 1)
+
+
+#plot adult pop
+herbivoreOld <- subset(herbivores, age > 50)
+herbAgePopOld <-  pivot_longer(herbivoreOld, cols = !gen, names_to = "Group", values_to = "Count")
+herbAgeGraph <- ggplot(herbAgePopOld, aes(gen, Count, color = Group))+
+  geom_line()
+
+
+agePopGraph <- ggplot(agePops, aes(gen, old))+
+  geom_line()
 #Used to plot population over time
 plotSize <- function(popSize){
   popTime <- tibble("gen" = c(1:length(popSize)), "population" = popSize)
