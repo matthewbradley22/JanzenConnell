@@ -1,3 +1,8 @@
+### This version of the model still has a "phenomenological" density function that won't be in the final code.
+#BetaCode branch has a version without this function, and with slightly more organized code, but not totally parameteerized yet
+
+
+
 #Load packages
 library(tidyverse) 
 library(gridExtra)
