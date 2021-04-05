@@ -32,7 +32,7 @@ ageChange = deltaT
 maxAge = 150
 seeds = 1
 dispParam = 5 #dispersalParam
-DensParam = 0.3 #DensityParam
+DensParam = 0.3 #DensityParamx
 # DensParam1 = 2
 uniqueSp = unique(data$species)
 numYears = 10000
@@ -41,8 +41,8 @@ numYears = 10000
 
 
 #Herbivore initials
-HerbDensParam = 5.2
-HerbEffectiveness = 1.4
+HerbDensParam = 5
+HerbEffectiveness = 1.2
 
 # Used for summary statistics
 speciesPop = NULL
@@ -128,7 +128,6 @@ for(t in seq(0, numYears, by = deltaT)){
 }
 
 
-
 ##### MAIN FUNCTIONS #######
 
 #Disperse 10 seeds per parent
@@ -160,14 +159,13 @@ treeProximity <- function(trees){
   for(i in 1:nrow(trees)){
     ind <- trees[i, ]
     xNeighbors = data.frame(subset(trees, xlocation <= ind$xlocation + DensParam &
-                                       xlocation >= ind$xlocation - DensParam
-                                     & xlocation != ind$xlocation))
+                                       xlocation >= ind$xlocation - DensParam))
     yNeighbors = data.frame(subset(trees, ylocation <= ind$ylocation + DensParam &
-                                     ylocation >= ind$ylocation - DensParam
-                                   & ylocation != ind$ylocation))
+                                     ylocation >= ind$ylocation - DensParam))
     neighbors = intersect(xNeighbors, yNeighbors)
     neighbors = unique(neighbors)
-    if(ind$age == 0 & nrow(neighbors)>1){
+    neighbors <- subset(neighbors, ID != ind$ID)
+    if(ind$age == 0 & nrow(neighbors) > 0){
       tooClose <- bind_rows(tooClose, ind)
     }
   }
@@ -199,7 +197,7 @@ herbivory <- function(trees, herbivores){
     indHerbivore = herbivores[i, ]
     infected = data[data$xlocation == indHerbivore$xlocation  & data$ylocation == indHerbivore$ylocation, ]
     probSurv = (((infected$age+1)) / (((indHerbivore$age)+1)*HerbEffectiveness))
-    if(probSurv < abs(rnorm(1, mean = 0.4, sd = 0.2))){
+    if(probSurv < abs(rnorm(1))){
       deadTrees <- bind_rows(deadTrees, infected)
     }
   }
@@ -211,10 +209,10 @@ herbivoreGrowth <- function(trees, herbivores){
   infectedTrees <- NULL
   for (i in 1:nrow(herbivores)){
     indHerbivore <- herbivores[i, ]
-    infectedTree <- subset(trees, xlocation > indHerbivore$xlocation - (HerbDensParam*runif(1, min = 0.7, max = 1.1))
-                           & xlocation < indHerbivore$xlocation + (HerbDensParam * abs(runif(1, min = 0.7, max = 1.1)))
-                           & ylocation > indHerbivore$ylocation - (HerbDensParam*abs(runif(1, min = 0.7, max = 1.1)))
-                           & ylocation < indHerbivore$ylocation + (HerbDensParam *abs(runif(1, min = 0.7, max = 1.1)))
+    infectedTree <- subset(trees, xlocation > indHerbivore$xlocation - (HerbDensParam)
+                           & xlocation < indHerbivore$xlocation + (HerbDensParam )
+                           & ylocation > indHerbivore$ylocation - (HerbDensParam)
+                           & ylocation < indHerbivore$ylocation + (HerbDensParam )
                            & species == indHerbivore$species)
     infectedTree <- subset(infectedTree, (xlocation != indHerbivore$xlocation | ylocation != indHerbivore$ylocation))
     infectedTrees <- bind_rows(infectedTrees, infectedTree)
