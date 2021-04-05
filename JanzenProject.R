@@ -41,8 +41,8 @@ numYears = 10000
 
 
 #Herbivore initials
-HerbDensParam = 5
-HerbEffectiveness = 1.2
+HerbDensParam = 4.8
+HerbEffectiveness = 0.8
 
 # Used for summary statistics
 speciesPop = NULL
