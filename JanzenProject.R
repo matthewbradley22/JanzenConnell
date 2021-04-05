@@ -22,7 +22,7 @@ data <-  tibble("ID" = 1:numInd, "age" = 3,
 herbivores <- data %>%  slice_sample(n = 250) %>% select(-c(ID, age, parentalDistance))
 herbivores <- herbivores %>% mutate(ID = 1:nrow(herbivores), age = 0)
 plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100),
-     xlab = "X-Coord", ylab = "Y-Coord", main = "Forest Individuals")
+     xlab = "X-Coord", ylab = "Y-Coord", main = "Total Population Sizes")
 
 
 
@@ -41,8 +41,8 @@ numYears = 10000
 
 
 #Herbivore initials
-HerbDensParam = 4.8
-HerbEffectiveness = 0.8
+HerbDensParam = 4.7
+HerbEffectiveness = 0.75
 
 # Used for summary statistics
 speciesPop = NULL
@@ -74,16 +74,6 @@ for(t in seq(0, numYears, by = deltaT)){
   #Background death of adults. Death rate decreases with age
   data <- backgroundDeath(data, data$age)
   
-  #Conspecific density death
-  #livePastDens = NULL
-  #for (k in 1:length(uniqueSp)){
-  #   sp = uniqueSp[k]
-  #   subPop = subset(data, species == sp)
-  #   survived <- densityPredation(subPop)
-  #   livePastDens <-  bind_rows(livePastDens, survived)
-  #   livePastDens <- livePastDens[order(livePastDens$ID), ]
-  # }
-  #data <- livePastDens
   #trees over max age die
   
   countSpecies <- speciesSize(data$species)
@@ -120,7 +110,12 @@ for(t in seq(0, numYears, by = deltaT)){
   denseSpecies <- bind_rows(denseSpecies, currentDens)
   agePops <- bind_rows(agePops, ages)
   herbAgePop <- bind_rows(herbAgePop, herbAges)
-  plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
+  
+  #These fucntions plot the trees every generation. I mainly use these when trying to
+  #paramterize something so I can see the effects on several generations. Otherwise comment them out
+  
+  plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100),
+       main = "Tree Population Size", ylab = "Count", xlab = "Generation")
   #plot(herbivores$xlocation, herbivores$ylocation, col = herbivores$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
   
   print(t)
@@ -177,7 +172,7 @@ backgroundDeath <- function(population, age){
   living = c()
   probDeath = c()
   for (i in 1:nrow(population)){
-    probDeath[i] <- ifelse(age[i] > 0,  0.3/(age[i]), 0.35)
+    probDeath[i] <- ifelse(age[i] > 0,  0.3/(age[i]), 0.45)
     alive <- (runif(1) > probDeath[i])
     living[i] = alive
   }
@@ -266,15 +261,11 @@ grid.arrange(agePopGraph, herbAgeGraph, ncol = 1)
 
 
 #plot adult pop
-herbivoreOld <- subset(herbivores, age > 50)
-herbAgePopOld <-  pivot_longer(herbivoreOld, cols = !gen, names_to = "Group", values_to = "Count")
-herbAgeGraph <- ggplot(herbAgePopOld, aes(gen, Count, color = Group))+
+treesOld <- subset(agePops1, Group == "old")
+
+agePopGraph <- ggplot(treesOld, aes(gen, Count))+
   geom_line()
-
-
-agePopGraph <- ggplot(agePops, aes(gen, old))+
-  geom_line()
-
+agePopGraph
 #Plot species density
 ggplot(data = denseSpecies, aes(x = gen, y= num))+
   geom_line()
@@ -346,3 +337,4 @@ speciesDense <- function(population){
 popSize = c(popSize, nrow(data))
 currentDens <- densSize(data$xlocation, data$ylocation)
 avgDens <- c(avgDens, currentDens)
+
