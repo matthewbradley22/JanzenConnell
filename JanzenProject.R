@@ -32,7 +32,7 @@ ageChange = deltaT
 maxAge = 150
 seeds = 1
 dispParam = 5 #dispersalParam
-# DensParam = 4 #DensityParam
+DensParam = 0.3 #DensityParam
 # DensParam1 = 2
 uniqueSp = unique(data$species)
 numYears = 10000
@@ -41,15 +41,15 @@ numYears = 10000
 
 
 #Herbivore initials
-HerbDensParam = 5
-HerbEffectiveness = 1.3
+HerbDensParam = 5.2
+HerbEffectiveness = 1.4
 
 # Used for summary statistics
 speciesPop = NULL
 herbPop = NULL
 agePops = NULL
 herbAgePop = NULL
-
+denseSpecies <- NULL
 
 
 
@@ -69,6 +69,8 @@ for(t in seq(0, numYears, by = deltaT)){
   #survival of seeds
   #babies <- seedPredation(babies, babies$parentalDistance)
   data <- bind_rows(data, babies)
+  #Do not let trees grow on top of eachother
+  data <- treeProximity(data)
   #Background death of adults. Death rate decreases with age
   data <- backgroundDeath(data, data$age)
   
@@ -104,7 +106,7 @@ for(t in seq(0, numYears, by = deltaT)){
   data <-  herbivory(data, herbivores)
   
   
-  #Supp  functions
+  #Supp  functions/Statistics
   ages <- tibble("gen" = t, "babies" = nrow(subset(data, age < 6)), "young" = nrow(subset(data, age >= 6 & age <=20)), "middle aged" = nrow(subset(data, age > 20 &
                                                                                                    age < 50)), 
                  "old" = nrow(subset(data, age >= 50)))
@@ -113,7 +115,9 @@ for(t in seq(0, numYears, by = deltaT)){
                      "young" = nrow(subset(herbivores, age >= 6 & age <=20)),
                      "middle aged" = nrow(subset(herbivores, age > 20 &                                                                                                                                 age < 50)), 
                      "old" = nrow(subset(herbivores, age >= 50)))
+  currentDens <- tibble("gen" = t, "num" = speciesDense(data))
   
+  denseSpecies <- bind_rows(denseSpecies, currentDens)
   agePops <- bind_rows(agePops, ages)
   herbAgePop <- bind_rows(herbAgePop, herbAges)
   plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
@@ -122,7 +126,6 @@ for(t in seq(0, numYears, by = deltaT)){
   print(t)
 
 }
-
 
 
 
@@ -152,6 +155,25 @@ dispersal <- function(Trees){
     
 }
 
+treeProximity <- function(trees){
+  tooClose = NULL
+  for(i in 1:nrow(trees)){
+    ind <- trees[i, ]
+    xNeighbors = data.frame(subset(trees, xlocation <= ind$xlocation + DensParam &
+                                       xlocation >= ind$xlocation - DensParam
+                                     & xlocation != ind$xlocation))
+    yNeighbors = data.frame(subset(trees, ylocation <= ind$ylocation + DensParam &
+                                     ylocation >= ind$ylocation - DensParam
+                                   & ylocation != ind$ylocation))
+    neighbors = intersect(xNeighbors, yNeighbors)
+    neighbors = unique(neighbors)
+    if(ind$age == 0 & nrow(neighbors)>1){
+      tooClose <- bind_rows(tooClose, ind)
+    }
+  }
+  return(subset(trees, !(ID %in% tooClose$ID)))
+}
+
 #Natural Background death
 backgroundDeath <- function(population, age){
   living = c()
@@ -176,7 +198,7 @@ herbivory <- function(trees, herbivores){
   for (i in 1:nrow(herbivores)){
     indHerbivore = herbivores[i, ]
     infected = data[data$xlocation == indHerbivore$xlocation  & data$ylocation == indHerbivore$ylocation, ]
-    probSurv = (((infected$age+1)) / (((indHerbivore$age)+4)*HerbEffectiveness))
+    probSurv = (((infected$age+1)) / (((indHerbivore$age)+1)*HerbEffectiveness))
     if(probSurv < abs(rnorm(1, mean = 0.4, sd = 0.2))){
       deadTrees <- bind_rows(deadTrees, infected)
     }
@@ -189,7 +211,6 @@ herbivoreGrowth <- function(trees, herbivores){
   infectedTrees <- NULL
   for (i in 1:nrow(herbivores)){
     indHerbivore <- herbivores[i, ]
-    
     infectedTree <- subset(trees, xlocation > indHerbivore$xlocation - (HerbDensParam*runif(1, min = 0.7, max = 1.1))
                            & xlocation < indHerbivore$xlocation + (HerbDensParam * abs(runif(1, min = 0.7, max = 1.1)))
                            & ylocation > indHerbivore$ylocation - (HerbDensParam*abs(runif(1, min = 0.7, max = 1.1)))
@@ -256,6 +277,10 @@ herbAgeGraph <- ggplot(herbAgePopOld, aes(gen, Count, color = Group))+
 agePopGraph <- ggplot(agePops, aes(gen, old))+
   geom_line()
 
+#Plot species density
+ggplot(data = denseSpecies, aes(x = gen, y= num))+
+  geom_line()
+
 #Used to plot population over time
 plotSize <- function(popSize){
   popTime <- tibble("gen" = c(1:length(popSize)), "population" = popSize)
@@ -306,66 +331,20 @@ plotHerbSpecies <- function(speciesPop){
     ylab("Herbivore Count")
   
 }
+
+speciesDense <- function(population){
+  totalNeighbors <- tibble("set" = NULL, "neighbors" = NULL)
+  for (i in seq(0,100,5)){
+      numNeighbors <- nrow(subset(population, species == 1 & xlocation > (i-5) & xlocation <= i
+                                  & ylocation > (i-5) & ylocation < (i)))
+      currentNeighbors <- tibble("set" = (i/5), "neighbors" = numNeighbors)
+      totalNeighbors <- bind_rows(totalNeighbors, currentNeighbors)
+  }
+  avg = mean(totalNeighbors$neighbors)
+  return(avg)
+  }
 #If want to track pop/dens put this in main loop and recreate variables popSize and avgDens
 #Then use plotSize and densSize functions
 popSize = c(popSize, nrow(data))
 currentDens <- densSize(data$xlocation, data$ylocation)
 avgDens <- c(avgDens, currentDens)
-
-
-
-#Only one tree in comp should die if multiple trees in area?
-#Redo function driving density dependence
-#Species by species population parameters
-
-#mechanistic details. Model individual enemies
-#Site occupancy model
-#Quantify how species does when low vs high
-#way to numerically track species density/proximity to others
-
-
-
-
-
-
-### Phenemological functions that have been taken out ###
-
-
-# #Seeds predated based on distance from parent
-# seedPredation <- function(Babies, parentalDist){
-#   babySurv = NULL
-#   for (i in 1:nrow(Babies)){
-#     dist = parentalDist[i]
-#     danger = runif(1)*(1/(dist))
-#     indLive = danger < .07
-#     babySurv[i] = indLive
-#   }
-#   return(Babies[babySurv, ])
-# }
-# 
-# #predation based on conspecifics nearby
-# densityPredation <- function(subPop){
-#   survived = NULL
-#   #dead = NULL
-#   for (i in 1:nrow(subPop)){
-#     #subPop <- subset(subPop, !(ID %in% dead$ID) )
-#     neighbors <-  NULL
-#     ind <- subPop[i, ]
-#     xNeighbors = data.frame(subset(subPop, xlocation <= ind$xlocation + DensParam & 
-#                                      xlocation >= ind$xlocation - DensParam
-#                                    & xlocation != ind$xlocation))
-#     yNeighbors = data.frame(subset(subPop, ylocation <= ind$ylocation + DensParam & 
-#                                      ylocation >= ind$ylocation - DensParam
-#                                    & ylocation != ind$ylocation))
-#     neighbors = intersect(xNeighbors, yNeighbors)
-#     neighbors = unique(neighbors)
-#     prob <- ifelse(nrow(neighbors)>0,  (DensParam1 * (ind$age+1))/(((max(neighbors$age))+1)*
-#                                                                      (nrow(neighbors))),
-#                    1.01)
-#     luck = runif(1)
-#     if(runif(1) < prob){
-#       survived <- bind_rows(ind , survived)
-#     } 
-#   }
-#   return(survived)
-# }
