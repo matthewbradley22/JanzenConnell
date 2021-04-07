@@ -1,3 +1,7 @@
+#### This code is a bit old and maybe not even useful, but at the time I thought it would help future me
+# run loops through parameters, so I'm keeping it around. The real project is in JanzenProject.R
+
+
 #Load packages
 library(tidyverse) 
 # Set up a grid to represent land
