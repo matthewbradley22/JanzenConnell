@@ -159,7 +159,7 @@ dispersal <- function(Trees){
       numBabies <- ceiling(seedsPerSpecies[i])
       #take a random sample of conspecific adult trees to disperse the seeds
       parents <- slice_sample(speciesTree, n = numBabies, replace = TRUE)
-      if (parents>0){
+      if (nrow(parents)>0){
         for (i in 1:nrow(parents)){
           parent = parents[i,]
           baby = parent[1, ]
