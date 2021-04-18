@@ -2,6 +2,8 @@
 ### I'm happy with it right now
 #Load packages
 
+#Load packages
+
 library(tidyverse) 
 library(gridExtra)
 
@@ -45,12 +47,12 @@ numYears = 10000
 R = 2
 
 #Carrying Capacity
-K= 1500
+K= 2000
 
 
 #Herbivore initials
 HerbDensParam = 5
-HerbEffectiveness = 0.9
+HerbEffectiveness = 0.88
 
 # Used for summary statistics
 speciesPopulation = NULL
@@ -157,19 +159,22 @@ dispersal <- function(Trees){
       numBabies <- ceiling(seedsPerSpecies[i])
       #take a random sample of conspecific adult trees to disperse the seeds
       parents <- slice_sample(speciesTree, n = numBabies, replace = TRUE)
-      for (i in 1:nrow(parents)){
-        parent = parents[i,]
-        baby = parent[1, ]
-        baby$age = as.integer(0)
-        baby$ID  = max(data$ID) + i 
-        baby$species  =  parent$species
-        babyDist = (rnorm(1, mean=0, sd=dispParam))
-        xDirection = runif(1)
-        baby$xlocation = ((xDirection*babyDist) + parent$xlocation) %% xsize
-        baby$ylocation = (((1-xDirection) * babyDist) + parent$ylocation) %% ysize
-        baby$parentalDistance = abs(babyDist)
-        babies <- bind_rows(babies, baby)
+      if (parents>0){
+        for (i in 1:nrow(parents)){
+          parent = parents[i,]
+          baby = parent[1, ]
+          baby$age = as.integer(0)
+          baby$ID  = max(data$ID) + i 
+          baby$species  =  parent$species
+          babyDist = (rnorm(1, mean=0, sd=dispParam))
+          xDirection = runif(1)
+          baby$xlocation = ((xDirection*babyDist) + parent$xlocation) %% xsize
+          baby$ylocation = (((1-xDirection) * babyDist) + parent$ylocation) %% ysize
+          baby$parentalDistance = abs(babyDist)
+          babies <- bind_rows(babies, baby)
         }
+      }
+      
     }
   }
   return(babies)
@@ -348,4 +353,6 @@ speciesDense <- function(population){
 popSize = c(popSize, nrow(data))
 currentDens <- densSize(data$xlocation, data$ylocation)
 avgDens <- c(avgDens, currentDens)
+
+
 
