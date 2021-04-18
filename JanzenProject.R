@@ -1,8 +1,9 @@
+### Got the basics of the carrying capacity function taken care of I think. Gonna take a bit to parameterize the code now, but structurally
+### I'm happy with it right now
 #Load packages
 
 library(tidyverse) 
 library(gridExtra)
-
 
 
 ### Initialize params ###
@@ -11,7 +12,7 @@ library(gridExtra)
 #Place individuals on plot
 xsize = ysize = 100
 
-numInd = 500
+numInd = 100
 numSpecies = 3
 data <-  tibble("ID" = 1:numInd, "age" = 3, 
                  species = sample(numSpecies, numInd, replace = TRUE), "xlocation" = runif(numInd, 0, 100), 
@@ -19,10 +20,10 @@ data <-  tibble("ID" = 1:numInd, "age" = 3,
 #Ignore:
 #sample(150, numInd, replace = TRUE)
 
-herbivores <- data %>%  slice_sample(n = 250) %>% select(-c(ID, age, parentalDistance))
+herbivores <- data %>%  slice_sample(n = 25) %>% select(-c(ID, age, parentalDistance))
 herbivores <- herbivores %>% mutate(ID = 1:nrow(herbivores), age = 0)
 plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100),
-     xlab = "X-Coord", ylab = "Y-Coord", main = "Total Population Sizes")
+     xlab = "X-Coord", ylab = "Y-Coord", main = "Initial Trees")
 
 
 
@@ -38,21 +39,25 @@ uniqueSp = unique(data$species)
 numYears = 10000
 
 
+# Conditions for population dynamics
+
+#Intrinsic rate of growth
+R = 2
+
+#Carrying Capacity
+K= 1500
 
 
 #Herbivore initials
-HerbDensParam = 4.7
-HerbEffectiveness = 0.75
+HerbDensParam = 5
+HerbEffectiveness = 0.9
 
 # Used for summary statistics
-speciesPop = NULL
+speciesPopulation = NULL
 herbPop = NULL
 agePops = NULL
 herbAgePop = NULL
 denseSpecies <- NULL
-
-
-
 
 ### MAIN LOOP ####
 
@@ -62,22 +67,28 @@ for(t in seq(0, numYears, by = deltaT)){
   data$age = data$age + deltaT
   herbivores$age = herbivores$age + 1
   
-  #disperse seeds/
+  #disperse seed
   adults <- data[data$age > 3, ]
+  seedsPerSpecies <- NULL
+  for (i in 1:numSpecies){
+    speciesPop = nrow(data[data$species == i,])
+    numSeeds <- carryingCapacity(speciesPop, nrow(data), R, K)
+    seedsPerSpecies <- c(seedsPerSpecies, numSeeds)
+  }
   Ind = data[1, ]
   babies <- dispersal(adults)
   #survival of seeds
   #babies <- seedPredation(babies, babies$parentalDistance)
   data <- bind_rows(data, babies)
   #Do not let trees grow on top of eachother
-  data <- treeProximity(data)
+  #data <- treeProximity(data)
   #Background death of adults. Death rate decreases with age
-  data <- backgroundDeath(data, data$age)
+  data <- backgroundDeath(data)
   
   #trees over max age die
   
   countSpecies <- speciesSize(data$species)
-  speciesPop <-  bind_rows(speciesPop, countSpecies)
+  speciesPopulation <-  bind_rows(speciesPopulation, countSpecies)
   
   #Herbivores die
   herbivores <- herbivoreDeath(data, herbivores)
@@ -125,55 +136,54 @@ for(t in seq(0, numYears, by = deltaT)){
 
 ##### MAIN FUNCTIONS #######
 
-#Disperse 10 seeds per parent
+#Carrying Capacity limitis birth rates
+
+carryingCapacity = function(speciesN, totalN, R, K){
+  
+  PopGrowth <- (speciesN*R*((K-totalN)/K))
+  PopGrowth <-  ifelse(PopGrowth > 0, PopGrowth, 0)
+  return(PopGrowth)
+  
+}
+
+#Disperse x number of seeds per parent. 
+
 dispersal <- function(Trees){
-  if(nrow(Trees)>0){
-    babies = NULL
-    for (i in 1:nrow(Trees)){
-      eachAdult = Trees[i,]
-      for (j in 1:seeds){
-        baby = Trees[1, ]
+  babies = NULL
+  for(i in 1:numSpecies){
+    speciesTree <- Trees[Trees$species == i,]
+    if(nrow(speciesTree)> 0){
+      #Before running this, we calculate seeds per species using the carrying capacity function
+      numBabies <- ceiling(seedsPerSpecies[i])
+      #take a random sample of conspecific adult trees to disperse the seeds
+      parents <- slice_sample(speciesTree, n = numBabies, replace = TRUE)
+      for (i in 1:nrow(parents)){
+        parent = parents[i,]
+        baby = parent[1, ]
         baby$age = as.integer(0)
-        baby$ID  = max(data$ID) + (10*(i-1)) + j
-        baby$species  =  eachAdult$species
+        baby$ID  = max(data$ID) + i 
+        baby$species  =  parent$species
         babyDist = (rnorm(1, mean=0, sd=dispParam))
         xDirection = runif(1)
-        baby$xlocation = ((xDirection*babyDist) + eachAdult$xlocation) %% xsize
-        baby$ylocation = (((1-xDirection) * babyDist) + eachAdult$ylocation) %% ysize
+        baby$xlocation = ((xDirection*babyDist) + parent$xlocation) %% xsize
+        baby$ylocation = (((1-xDirection) * babyDist) + parent$ylocation) %% ysize
         baby$parentalDistance = abs(babyDist)
         babies <- bind_rows(babies, baby)
-      }
+        }
     }
-    return(babies)
   }
-    
+  return(babies)
 }
+  
 
-treeProximity <- function(trees){
-  tooClose = NULL
-  for(i in 1:nrow(trees)){
-    ind <- trees[i, ]
-    xNeighbors = data.frame(subset(trees, xlocation <= ind$xlocation + DensParam &
-                                       xlocation >= ind$xlocation - DensParam))
-    yNeighbors = data.frame(subset(trees, ylocation <= ind$ylocation + DensParam &
-                                     ylocation >= ind$ylocation - DensParam))
-    neighbors = intersect(xNeighbors, yNeighbors)
-    neighbors = unique(neighbors)
-    neighbors <- subset(neighbors, ID != ind$ID)
-    if(ind$age == 0 & nrow(neighbors) > 0){
-      tooClose <- bind_rows(tooClose, ind)
-    }
-  }
-  return(subset(trees, !(ID %in% tooClose$ID)))
-}
+
 
 #Natural Background death
-backgroundDeath <- function(population, age){
+backgroundDeath <- function(population){
   living = c()
   probDeath = c()
   for (i in 1:nrow(population)){
-    probDeath[i] <- ifelse(age[i] > 0,  0.3/(age[i]), 0.45)
-    alive <- (runif(1) > probDeath[i])
+    alive <- (runif(1) > 0.01)
     living[i] = alive
   }
   return(population[living,])
@@ -192,7 +202,7 @@ herbivory <- function(trees, herbivores){
     indHerbivore = herbivores[i, ]
     infected = data[data$xlocation == indHerbivore$xlocation  & data$ylocation == indHerbivore$ylocation, ]
     probSurv = (((infected$age+1)) / (((indHerbivore$age)+1)*HerbEffectiveness))
-    if(probSurv < abs(rnorm(1))){
+    if(probSurv < abs(rnorm(1,mean = 1, sd = 0.2))){
       deadTrees <- bind_rows(deadTrees, infected)
     }
   }
@@ -245,7 +255,7 @@ herbivoreDeath <- function(trees, herbivores){
 
 
 #Plot pathogen vs trees
-grid.arrange(plotSpecies(speciesPop), plotHerbSpecies(herbPop), ncol = 1)
+grid.arrange(plotSpecies(speciesPopulation), plotHerbSpecies(herbPop), ncol = 1)
 
 
 #Plot the age distribution over time of trees
@@ -268,7 +278,8 @@ agePopGraph <- ggplot(treesOld, aes(gen, Count))+
 agePopGraph
 #Plot species density
 ggplot(data = denseSpecies, aes(x = gen, y= num))+
-  geom_line()
+  geom_line()+
+  labs(y = "Population per 5x5",x = "generation", title = "Conspecific density")
 
 #Used to plot population over time
 plotSize <- function(popSize){
@@ -298,25 +309,25 @@ speciesSize <- function(speciesTypes){
 
 
 #Plot amount of each species
-plotSpecies <- function(speciesPop){
-  speciesPop <- add_column(speciesPop, gen = 1:nrow(speciesPop))
-  speciesPop <- pivot_longer(speciesPop, cols = starts_with("Species"), names_to = "Species",
+plotSpecies <- function(speciesPopulation){
+  speciesPopulation <- add_column(speciesPopulation, gen = 1:nrow(speciesPopulation))
+  speciesPopulation <- pivot_longer(speciesPopulation, cols = starts_with("Species"), names_to = "Species",
                              names_prefix = "Species ", values_to = "Count")
-  ggplot(data = speciesPop, aes(gen, Count, col = Species))+
+  ggplot(data = speciesPopulation, aes(gen, Count, col = Species))+
     geom_point()+
     geom_line()+
-    ylim(0, max(speciesPop$Count))+
+    ylim(0, max(speciesPopulation$Count))+
     ylab("Tree Count")
   
 }
-plotHerbSpecies <- function(speciesPop){
-  speciesPop <- add_column(speciesPop, gen = 1:nrow(speciesPop))
-  speciesPop <- pivot_longer(speciesPop, cols = starts_with("Species"), names_to = "Species",
+plotHerbSpecies <- function(speciesPopulation){
+  speciesPopulation <- add_column(speciesPopulation, gen = 1:nrow(speciesPopulation))
+  speciesPopulation <- pivot_longer(speciesPopulation, cols = starts_with("Species"), names_to = "Species",
                              names_prefix = "Species ", values_to = "Count")
-  ggplot(data = speciesPop, aes(gen, Count, col = Species))+
+  ggplot(data = speciesPopulation, aes(gen, Count, col = Species))+
     geom_point()+
     geom_line()+
-    ylim(0, max(speciesPop$Count))+
+    ylim(0, max(speciesPopulation$Count))+
     ylab("Herbivore Count")
   
 }
