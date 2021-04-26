@@ -1,5 +1,4 @@
-### Got the basics of the carrying capacity function taken care of I think. Gonna take a bit to parameterize the code now, but structurally
-### I'm happy with it right now
+### Updated with the new carrying capacity equation. Still parameterizing a bit
 #Load packages
 
 #Load packages
@@ -19,6 +18,7 @@ numSpecies = 3
 data <-  tibble("ID" = 1:numInd, "age" = 3, 
                  species = sample(numSpecies, numInd, replace = TRUE), "xlocation" = runif(numInd, 0, 100), 
                  "ylocation" = runif(numInd,0,100), "parentalDistance" = 0)
+
 #Ignore:
 #sample(150, numInd, replace = TRUE)
 
@@ -44,15 +44,15 @@ numYears = 10000
 # Conditions for population dynamics
 
 #Intrinsic rate of growth
-R = 2
+R = 8
 
 #Carrying Capacity
-K= 2000
-
+K= 2500
+growthRate = 1.5
 
 #Herbivore initials
 HerbDensParam = 5
-HerbEffectiveness = 0.88
+HerbEffectiveness = 0.79
 
 # Used for summary statistics
 speciesPopulation = NULL
@@ -74,7 +74,7 @@ for(t in seq(0, numYears, by = deltaT)){
   seedsPerSpecies <- NULL
   for (i in 1:numSpecies){
     speciesPop = nrow(data[data$species == i,])
-    numSeeds <- carryingCapacity(speciesPop, nrow(data), R, K)
+    numSeeds <- carryingCapacity(speciesPop, nrow(data), K)
     seedsPerSpecies <- c(seedsPerSpecies, numSeeds)
   }
   Ind = data[1, ]
@@ -140,11 +140,11 @@ for(t in seq(0, numYears, by = deltaT)){
 
 #Carrying Capacity limitis birth rates
 
-carryingCapacity = function(speciesN, totalN, R, K){
-  
-  PopGrowth <- (speciesN*R*((K-totalN)/K))
-  PopGrowth <-  ifelse(PopGrowth > 0, PopGrowth, 0)
-  return(PopGrowth)
+carryingCapacity = function(speciesN, totalN, K){
+  s = speciesN * growthRate
+  popGrowth <- (s*(K-totalN)/K)
+  popGrowth <-  ifelse(popGrowth > 0, popGrowth, 0)
+  return(popGrowth)
   
 }
 
@@ -173,6 +173,9 @@ dispersal <- function(Trees){
           baby$parentalDistance = abs(babyDist)
           babies <- bind_rows(babies, baby)
         }
+      }
+      else{
+        next
       }
       
     }
@@ -250,10 +253,6 @@ herbivoreDeath <- function(trees, herbivores){
   herbID = dead$ID
   return(subset(herbivores, !(ID %in% herbID)))
 }
-
-
-
-
 
 
 ### SUPPLEMENTAL FUNCTIONS###
@@ -353,6 +352,7 @@ speciesDense <- function(population){
 popSize = c(popSize, nrow(data))
 currentDens <- densSize(data$xlocation, data$ylocation)
 avgDens <- c(avgDens, currentDens)
+
 
 
 
