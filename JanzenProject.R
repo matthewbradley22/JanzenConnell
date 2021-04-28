@@ -34,25 +34,21 @@ deltaT = 1 #1 year periods of growth
 ageChange = deltaT
 maxAge = 150
 seeds = 1
-dispParam = 5 #dispersalParam
+dispParam = 8 #dispersalParam
 DensParam = 0.3 #DensityParamx
 # DensParam1 = 2
 uniqueSp = unique(data$species)
 numYears = 10000
 
 
-# Conditions for population dynamics
-
-#Intrinsic rate of growth
-R = 8
 
 #Carrying Capacity
-K= 2500
-growthRate = 1.5
+K= 3500
+growthRate = 0.7
 
 #Herbivore initials
-HerbDensParam = 5
-HerbEffectiveness = 0.79
+HerbDensParam = 4
+HerbEffectiveness = 0.9
 
 # Used for summary statistics
 speciesPopulation = NULL
@@ -82,8 +78,7 @@ for(t in seq(0, numYears, by = deltaT)){
   #survival of seeds
   #babies <- seedPredation(babies, babies$parentalDistance)
   data <- bind_rows(data, babies)
-  #Do not let trees grow on top of eachother
-  #data <- treeProximity(data)
+  
   #Background death of adults. Death rate decreases with age
   data <- backgroundDeath(data)
   
@@ -167,15 +162,13 @@ dispersal <- function(Trees){
           baby$ID  = max(data$ID) + i 
           baby$species  =  parent$species
           babyDist = (rnorm(1, mean=0, sd=dispParam))
-          xDirection = runif(1)
-          baby$xlocation = ((xDirection*babyDist) + parent$xlocation) %% xsize
-          baby$ylocation = (((1-xDirection) * babyDist) + parent$ylocation) %% ysize
-          baby$parentalDistance = abs(babyDist)
+          r = babyDist * sqrt(runif(1))
+          theta = runif(1)*2*pi
+          baby$xlocation = ((r*cos(theta)) + parent$xlocation) %% xsize
+          baby$ylocation = (((r*sin(theta)) * babyDist) + parent$ylocation) %% ysize
+          baby$parentalDistance = abs(r)
           babies <- bind_rows(babies, baby)
         }
-      }
-      else{
-        next
       }
       
     }
@@ -352,6 +345,8 @@ speciesDense <- function(population){
 popSize = c(popSize, nrow(data))
 currentDens <- densSize(data$xlocation, data$ylocation)
 avgDens <- c(avgDens, currentDens)
+
+
 
 
 
