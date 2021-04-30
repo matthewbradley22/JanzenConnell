@@ -2,9 +2,6 @@
 #Load packages
 
 #Load packages
-
-#Load packages
-
 library(tidyverse) 
 library(gridExtra)
 
@@ -346,6 +343,7 @@ speciesDense <- function(population){
 popSize = c(popSize, nrow(data))
 currentDens <- densSize(data$xlocation, data$ylocation)
 avgDens <- c(avgDens, currentDens)
+
 
 
 
