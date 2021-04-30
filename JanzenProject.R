@@ -3,6 +3,8 @@
 
 #Load packages
 
+#Load packages
+
 library(tidyverse) 
 library(gridExtra)
 
@@ -32,8 +34,6 @@ plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,10
 #Set up rates of birth/death/growth etc...
 deltaT = 1 #1 year periods of growth
 ageChange = deltaT
-maxAge = 150
-seeds = 1
 dispParam = 8 #dispersalParam
 DensParam = 0.3 #DensityParamx
 # DensParam1 = 2
@@ -44,11 +44,11 @@ numYears = 10000
 
 #Carrying Capacity
 K= 3500
-growthRate = 0.7
+growthRate = 0.3
 
 #Herbivore initials
 HerbDensParam = 4
-HerbEffectiveness = 0.9
+HerbEffectiveness = 0.84
 
 # Used for summary statistics
 speciesPopulation = NULL
@@ -254,7 +254,8 @@ herbivoreDeath <- function(trees, herbivores){
 #Plot pathogen vs trees
 grid.arrange(plotSpecies(speciesPopulation), plotHerbSpecies(herbPop), ncol = 1)
 
-
+totals <- speciesPopulation %>% mutate(total = (`Species 1` + `Species 2` + `Species 3`))
+plot(totals$total, pch = 20, col = "cadetblue3")
 #Plot the age distribution over time of trees
 agePops1 <-  pivot_longer(agePops, cols = !gen, names_to = "Group", values_to = "Count")
 agePopGraph <- ggplot(agePops1, aes(gen, Count, color = Group))+
@@ -345,7 +346,6 @@ speciesDense <- function(population){
 popSize = c(popSize, nrow(data))
 currentDens <- densSize(data$xlocation, data$ylocation)
 avgDens <- c(avgDens, currentDens)
-
 
 
 
