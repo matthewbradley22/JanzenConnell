@@ -39,7 +39,7 @@ growthRate = 0.5
 
 #Pathogen initials
 PathDensParam = 4
-infectionRate = 0.01
+infectionRate = 1
 infectedDeathRate = 0.1
 # Used for summary statistics
 speciesPopulation = NULL
@@ -241,11 +241,3 @@ speciesSize <- function(speciesTypes){
   df <- tibble("Species 1" = length(a), "Species 2" = length(b), "Species 3" = length(c))
   return(df)
 }
-
-
-
-
-
-
-
-
