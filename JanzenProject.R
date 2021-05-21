@@ -38,12 +38,12 @@ K= 2000
 growthRate = 0.5
 
 #Pathogen initials
-PathDensParam = 2
-infectionRate1 = 1
+PathDensParam = 7
+infectionRate1 = 0
 infectionRate2 = 1
 healthyDeathRate = 0.01
-infectedDeathRate1 = 0.07
-infectedDeathRate2 = 0.07
+infectedDeathRate1 = 0
+infectedDeathRate2 = 0
 # Used for summary statistics
 speciesPopulation = NULL
 pathPop = NULL
@@ -66,8 +66,6 @@ for(t in seq(0, numYears, by = deltaT)){
   }
   Ind = data[1, ]
   babies <- dispersal(adults)
-  #survival of seeds
-  #babies <- seedPredation(babies, babies$parentalDistance)
   data <- bind_rows(data, babies)
   
   #Background death of adults. Death rate decreases with age
@@ -136,7 +134,12 @@ dispersal <- function(Trees){
           parent = parents[i,]
           baby = parent[1, ]
           baby$age = as.integer(0)
-          baby$ID  = max(data$ID) + i 
+          if(parent$species == 1){
+            baby$ID  = max(data$ID) + i 
+          }
+          else{
+            baby$ID  = max(babies$ID) + i 
+          }
           baby$species  =  parent$species
           babyDist = (rnorm(1, mean=0, sd=dispParam))
           baby$Pathogen = 0
@@ -254,3 +257,4 @@ speciesSize <- function(speciesTypes){
   df <- tibble("Species 1" = length(a), "Species 2" = length(b), "Species 3" = length(c))
   return(df)
 }
+
