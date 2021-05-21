@@ -198,7 +198,7 @@ pathGrowth <- function(trees){
       newInfections <- slice_sample(newInfections, n = round(nrow(newInfections)* infectionRate1))
       newPathogens <- bind_rows(newPathogens, newInfections)
     }else{
-      ewInfections <- slice_sample(newInfections, n = round(nrow(newInfections)* infectionRate2))
+      newInfections <- slice_sample(newInfections, n = round(nrow(newInfections)* infectionRate2))
       newPathogens <- bind_rows(newPathogens, newInfections)
     }
     
