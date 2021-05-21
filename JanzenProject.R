@@ -35,15 +35,18 @@ numYears = 1000
 
 #Carrying Capacity
 K= 2000
-growthRate = 0.5
-
+growthRate1 = 0.5
+growthRate2= 0.5
 #Pathogen initials
 PathDensParam = 7
-infectionRate1 = 0.8
-infectionRate2 = 0.8
+
+infectionRate1 = 0
+infectionRate2 = 1
+
 healthyDeathRate = 0.01
-infectedDeathRate1 = 0.7
-infectedDeathRate2 = 0.7
+
+infectedDeathRate1 = 0
+infectedDeathRate2 = 0
 # Used for summary statistics
 speciesPopulation = NULL
 pathPop = NULL
@@ -61,7 +64,7 @@ for(t in seq(0, numYears, by = deltaT)){
   seedsPerSpecies <- NULL
   for (i in 1:numSpecies){
     speciesPop = nrow(data[data$species == i,])
-    numSeeds <- carryingCapacity(speciesPop, nrow(data), K)
+    numSeeds <- carryingCapacity(i, speciesPop, nrow(data), K)
     seedsPerSpecies <- c(seedsPerSpecies, numSeeds)
   }
   Ind = data[1, ]
@@ -110,8 +113,12 @@ for(t in seq(0, numYears, by = deltaT)){
 
 #Carrying Capacity limitis birth rates
 
-carryingCapacity = function(speciesN, totalN, K){
-  s = speciesN * growthRate
+carryingCapacity = function(species,speciesN, totalN, K){
+  if(species==1){
+    s = speciesN * growthRate1
+  }else{
+    s = speciesN * growthRate2
+  }
   popGrowth <- (s*(K-totalN)/K)
   popGrowth <-  ifelse(popGrowth > 0, popGrowth, 0)
   return(popGrowth)
@@ -257,4 +264,5 @@ speciesSize <- function(speciesTypes){
   df <- tibble("Species 1" = length(a), "Species 2" = length(b), "Species 3" = length(c))
   return(df)
 }
+
 
