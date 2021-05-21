@@ -1,7 +1,7 @@
 #Load packages
 
 library(tidyverse) 
-library(gridExtra)
+library(gridExtra) 
 
 
 ### Initialize params ###
@@ -11,7 +11,7 @@ library(gridExtra)
 xsize = ysize = 100
 
 numInd = 100
-numSpecies = 3
+numSpecies = 2
 data <-  tibble("ID" = 1:numInd, "age" = 3, 
                 species = sample(numSpecies, numInd, replace = TRUE), "xlocation" = runif(numInd, 0, 100), 
                 "ylocation" = runif(numInd,0,100), "parentalDistance" = 0, "Pathogen" = 0)
@@ -29,18 +29,21 @@ deltaT = 1 #1 year periods of growth
 ageChange = deltaT
 dispParam = 8 #dispersalParam
 uniqueSp = unique(data$species)
-numYears = 100
+numYears = 1000
 
 
 
 #Carrying Capacity
-K= 3000
+K= 2000
 growthRate = 0.5
 
 #Pathogen initials
-PathDensParam = 4
-infectionRate = 1
-infectedDeathRate = 0.1
+PathDensParam = 2
+infectionRate1 = 1
+infectionRate2 = 1
+healthyDeathRate = 0.01
+infectedDeathRate1 = 0.07
+infectedDeathRate2 = 0.07
 # Used for summary statistics
 speciesPopulation = NULL
 pathPop = NULL
@@ -96,7 +99,7 @@ for(t in seq(0, numYears, by = deltaT)){
   
   plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100),
        main = "Tree Population Size", ylab = "Count", xlab = "Generation")
-  #plot(pathogens$xlocation, pathogens$ylocation, col = pathogens$species, pch = 20, xlim = c(1,100), ylim = c(1,100))
+ 
   print(t)
   
   #Grow
@@ -159,11 +162,15 @@ backgroundDeath <- function(population){
   living = c()
   probDeath = c()
   for (i in 1:nrow(population)){
-    if (data[i,]$Pathogen == 1){
-      alive <- (runif(1) > infectedDeathRate)
+    if (data[i,]$Pathogen == 1 & data[i,]$species ==1){
+      alive <- (runif(1) > infectedDeathRate1)
       living[i] = alive
-    }else{
-      alive <- (runif(1) > 0.01)
+    }else if (data[i,]$Pathogen == 1 & data[i,]$species ==2) {
+      alive <- (runif(1) > infectedDeathRate2)
+      living[i] = alive
+    }
+    else{
+      alive <- (runif(1) > healthyDeathRate)
       living[i] = alive
     }
     
@@ -182,13 +189,19 @@ pathGrowth <- function(trees){
   healthyTrees <- data[data$Pathogen == 0,]
   for (i in 1:nrow(infectedTrees)){
     indTree = infectedTrees[i, ]
-    newInfections = subset(healthyTrees, xlocation > indTree$xlocation - (PathDensParam)
-                           & xlocation < indTree$xlocation + (PathDensParam)
-                           & ylocation > indTree$ylocation - (PathDensParam)
-                           & ylocation < indTree$ylocation + (PathDensParam)
+    newInfections = subset(healthyTrees, xlocation > (indTree$xlocation - (PathDensParam))%% xsize
+                           & xlocation < (indTree$xlocation + (PathDensParam))%% xsize
+                           & ylocation > (indTree$ylocation - (PathDensParam))%% xsize
+                           & ylocation < (indTree$ylocation + (PathDensParam))%% xsize
                            & species == indTree$species)
-    newInfections <- slice_sample(newInfections, n = round(nrow(newInfections)* infectionRate))
-    newPathogens <- bind_rows(newPathogens, newInfections)
+    if (indTree$species==1){
+      newInfections <- slice_sample(newInfections, n = round(nrow(newInfections)* infectionRate1))
+      newPathogens <- bind_rows(newPathogens, newInfections)
+    }else{
+      ewInfections <- slice_sample(newInfections, n = round(nrow(newInfections)* infectionRate2))
+      newPathogens <- bind_rows(newPathogens, newInfections)
+    }
+    
     
   }
   newPathogens <- newPathogens[!duplicated(newPathogens),]
