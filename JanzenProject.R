@@ -40,13 +40,13 @@ growthRate2= 0.5
 #Pathogen initials
 PathDensParam = 7
 
-infectionRate1 = 0
-infectionRate2 = 1
+infectionRate1 = 0.8
+infectionRate2 = 0.8
 
 healthyDeathRate = 0.01
 
-infectedDeathRate1 = 0
-infectedDeathRate2 = 0
+infectedDeathRate1 = 0.03
+infectedDeathRate2 = 0.03
 # Used for summary statistics
 speciesPopulation = NULL
 pathPop = NULL
