@@ -1,5 +1,4 @@
 #Load packages
-
 library(tidyverse) 
 library(gridExtra) 
 
@@ -16,6 +15,7 @@ data <-  tibble("ID" = 1:numInd, "age" = 3,
                 species = sample(numSpecies, numInd, replace = TRUE), "xlocation" = runif(numInd, 0, 100), 
                 "ylocation" = runif(numInd,0,100), "parentalDistance" = 0, "Pathogen" = 0)
 
+#Choose an initial 25% of population to be infected
 infected <- sample(numInd, numInd/4)
 data$Pathogen[which(data$ID %in% infected)] <- 1
 
@@ -35,18 +35,30 @@ numYears = 1000
 
 #Carrying Capacity
 K= 2000
-growthRate1 = 0.5
-growthRate2= 0.5
+
+# Can be anywhere from ~0.2 to ~3. Once its above ~1 you get oscillation above and below carrying capacity and program
+#gets a fair bit slower as you near 3
+growthRate1 = 1
+growthRate2= 1
+
 #Pathogen initials
-PathDensParam = 7
 
-infectionRate1 = 0.8
-infectionRate2 = 0.8
+#This is how far away a tree can be affected. But its a torus so setting the value to 100 does not man 
+#every tree is infected. best values seem to be between 2.5 and 3 (for infected death rate around 0.03)
+#Too low and pathogens go extinct, too high and all trees quickly pathogenized
+PathDensParam = 2.7
 
-healthyDeathRate = 0.01
+infectionRate1 = 0.7
+infectionRate2 = 0.7
 
-infectedDeathRate1 = 0.03
-infectedDeathRate2 = 0.03
+#Has to stay lower than infected death rates. Slows growth to carrying capacity as it gets larger but
+# tree dynamics seem to be similar between 0.01 and 0.05, but pathogens end up growing much slower
+#and have larger swings as death rates increase
+healthyDeathRate = 0.02
+
+#Dynamics get much more variable when value is ~0.04 or more. 0.02-0.04 pretty good
+infectedDeathRate1 = 0.05
+infectedDeathRate2 = 0.05
 # Used for summary statistics
 speciesPopulation = NULL
 pathPop = NULL
@@ -99,7 +111,7 @@ for(t in seq(0, numYears, by = deltaT)){
   #paramterize something so I can see the effects on several generations. Otherwise comment them out
   
   plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,100), ylim = c(1,100),
-       main = "Tree Population Size", ylab = "Count", xlab = "Generation")
+       main = "Tree Population", ylab = "Count", xlab = "Generation")
  
   print(t)
   
@@ -111,7 +123,7 @@ for(t in seq(0, numYears, by = deltaT)){
 
 ##### MAIN FUNCTIONS #######
 
-#Carrying Capacity limitis birth rates
+#Carrying Capacity limits birth rates
 
 carryingCapacity = function(species,speciesN, totalN, K){
   if(species==1){
@@ -223,7 +235,7 @@ pathGrowth <- function(trees){
 ### SUPPLEMENTAL FUNCTIONS###
 
 
-#Plot trees
+#Plot trees 
 plotSpecies(speciesPopulation) 
 totals <- speciesPopulation %>% mutate(total = (`Species 1` + `Species 2` + `Species 3`))
 plot(totals$total, pch = 20, col = "cadetblue3")
@@ -264,5 +276,7 @@ speciesSize <- function(speciesTypes){
   df <- tibble("Species 1" = length(a), "Species 2" = length(b), "Species 3" = length(c))
   return(df)
 }
+
+
 
 
