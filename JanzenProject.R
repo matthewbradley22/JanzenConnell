@@ -43,7 +43,7 @@ growthRate2= 1
 
 #Pathogen initials
 
-#This is how far away a tree can be affected. But its a torus so setting the value to 100 does not man 
+#This is how far away a tree can be infected. But its a torus so setting the value to 100 does not man 
 #every tree is infected. best values seem to be between 2.5 and 3 (for infected death rate around 0.03)
 #Too low and pathogens go extinct, too high and all trees quickly pathogenized
 PathDensParam = 2.7
