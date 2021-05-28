@@ -36,8 +36,8 @@ numYears = 1000
 #Carrying Capacity
 K= 2000
 
-# Can be anywhere from ~0.2 to ~3. Once its above ~1 you get oscillation above and below carrying capacity and program
-#gets a fair bit slower as you near 3
+# Can be anywhere from ~0.2 to ~3. Once its above ~1 you get the total population having a small oscillation above and below carrying capacity 
+#and program gets a fair bit slower as you near 3
 growthRate1 = 1
 growthRate2= 1
 
