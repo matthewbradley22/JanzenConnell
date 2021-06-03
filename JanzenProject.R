@@ -57,7 +57,7 @@ infectionRates = c(0.7, 0.7)
 healthyDeathRate = 0.02
 
 #Dynamics get much more variable when value is ~0.04 or more. 0.02-0.04 pretty good for 0.7 infection Rate.
-infectedDeathRates = c(0.03,0.03)
+infectedDeathRates = c(0.04,0.04)
 # Used for summary statistics
 speciesPopulation = NULL
 pathPop = NULL
@@ -174,11 +174,11 @@ dispersal <- function(Trees){
 backgroundDeath <- function(population){
   living = c()
   for (i in 1:nrow(population)){
-    if (data[i,]$Pathogen == 1){
+    if (population[i,]$Pathogen == 1){
       alive <- (runif(1) > infectedDeathRates[data[i,]$species])
       living[i] = alive
     }
-    if(data[i,]$Pathogen == 0){
+    if(population[i,]$Pathogen == 0){
       alive <- (runif(1) > healthyDeathRate)
       living[i] = alive
     }
@@ -280,3 +280,4 @@ speciesSize <- function(speciesTypes){
   }
   return(df)
 }
+
