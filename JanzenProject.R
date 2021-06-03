@@ -23,6 +23,7 @@ plot(data$xlocation, data$ylocation, col = data$species, pch = 20, xlim = c(1,10
      xlab = "X-Coord", ylab = "Y-Coord", main = "Initial Trees")
 
 
+  
 
 #Set up rates of birth/death/growth etc...
 deltaT = 1 #1 year periods of growth
@@ -36,29 +37,27 @@ numYears = 1000
 #Carrying Capacity
 K= 2000
 
-# Can be anywhere from ~0.2 to ~3. Once its above ~1 you get the total population having a small oscillation above and below carrying capacity 
-#and program gets a fair bit slower as you near 3
-growthRate1 = 1
-growthRate2= 1
+# Can be anywhere from ~0.2 to ~3. Once its above ~1 you get oscillation above and below carrying capacity and program
+#gets a fair bit slower as you near 3
+growthrates = c(1,1)
 
 #Pathogen initials
 
-#This is how far away a tree can be infected. But its a torus so setting the value to 100 does not man 
+#This is how far away a tree can be affected. But its a torus so setting the value to 100 does not man 
 #every tree is infected. best values seem to be between 2.5 and 3 (for infected death rate around 0.03)
 #Too low and pathogens go extinct, too high and all trees quickly pathogenized
 PathDensParam = 2.7
 
-infectionRate1 = 0.7
-infectionRate2 = 0.7
+
+infectionRates = c(0.7, 0.7)
 
 #Has to stay lower than infected death rates. Slows growth to carrying capacity as it gets larger but
 # tree dynamics seem to be similar between 0.01 and 0.05, but pathogens end up growing much slower
 #and have larger swings as death rates increase
 healthyDeathRate = 0.02
 
-#Dynamics get much more variable when value is ~0.04 or more. 0.02-0.04 pretty good
-infectedDeathRate1 = 0.05
-infectedDeathRate2 = 0.05
+#Dynamics get much more variable when value is ~0.04 or more. 0.02-0.04 pretty good for 0.7 infection Rate.
+infectedDeathRates = c(0.03,0.03)
 # Used for summary statistics
 speciesPopulation = NULL
 pathPop = NULL
@@ -94,7 +93,7 @@ for(t in seq(0, numYears, by = deltaT)){
   newPathogens <- pathGrowth(data)
   data$Pathogen[which(data$ID %in% newPathogens$ID)] <- 1
   
-  #Supplemental
+  #Count number of pathogens
   countPaths <- data[data$Pathogen==1,]
   pathAges <- speciesSize(countPaths$species)
   pathPop <- bind_rows(pathPop, pathAges)
@@ -121,16 +120,13 @@ for(t in seq(0, numYears, by = deltaT)){
 }
 
 
-##### MAIN FUNCTIONS #######
+  ##### MAIN FUNCTIONS #######
 
 #Carrying Capacity limits birth rates
 
 carryingCapacity = function(species,speciesN, totalN, K){
-  if(species==1){
-    s = speciesN * growthRate1
-  }else{
-    s = speciesN * growthRate2
-  }
+  growthrate = growthrates[species]
+  s = speciesN * growthrate
   popGrowth <- (s*(K-totalN)/K)
   popGrowth <-  ifelse(popGrowth > 0, popGrowth, 0)
   return(popGrowth)
@@ -140,25 +136,20 @@ carryingCapacity = function(species,speciesN, totalN, K){
 #Disperse x number of seeds per parent. 
 
 dispersal <- function(Trees){
-  babies = NULL
+  babies = tibble()
   for(i in 1:numSpecies){
     speciesTree <- Trees[Trees$species == i,]
     if(nrow(speciesTree)> 0){
       #Before running this, we calculate seeds per species using the carrying capacity function
-      numBabies <- ceiling(seedsPerSpecies[i])
+      numBabies <- round(seedsPerSpecies[i])
       #take a random sample of conspecific adult trees to disperse the seeds
       parents <- slice_sample(speciesTree, n = numBabies, replace = TRUE)
       if (nrow(parents)>0){
         for (i in 1:nrow(parents)){
           parent = parents[i,]
-          baby = parent[1, ]
+          baby = parent
           baby$age = as.integer(0)
-          if(parent$species == 1){
-            baby$ID  = max(data$ID) + i 
-          }
-          else{
-            baby$ID  = max(babies$ID) + i 
-          }
+          baby$ID  = max(data$ID) + i + nrow(babies[babies$species != baby$species,])
           baby$species  =  parent$species
           babyDist = (rnorm(1, mean=0, sd=dispParam))
           baby$Pathogen = 0
@@ -182,16 +173,12 @@ dispersal <- function(Trees){
 #Natural Background death
 backgroundDeath <- function(population){
   living = c()
-  probDeath = c()
   for (i in 1:nrow(population)){
-    if (data[i,]$Pathogen == 1 & data[i,]$species ==1){
-      alive <- (runif(1) > infectedDeathRate1)
-      living[i] = alive
-    }else if (data[i,]$Pathogen == 1 & data[i,]$species ==2) {
-      alive <- (runif(1) > infectedDeathRate2)
+    if (data[i,]$Pathogen == 1){
+      alive <- (runif(1) > infectedDeathRates[data[i,]$species])
       living[i] = alive
     }
-    else{
+    if(data[i,]$Pathogen == 0){
       alive <- (runif(1) > healthyDeathRate)
       living[i] = alive
     }
@@ -216,13 +203,9 @@ pathGrowth <- function(trees){
                            & ylocation > (indTree$ylocation - (PathDensParam))%% xsize
                            & ylocation < (indTree$ylocation + (PathDensParam))%% xsize
                            & species == indTree$species)
-    if (indTree$species==1){
-      newInfections <- slice_sample(newInfections, n = round(nrow(newInfections)* infectionRate1))
-      newPathogens <- bind_rows(newPathogens, newInfections)
-    }else{
-      newInfections <- slice_sample(newInfections, n = round(nrow(newInfections)* infectionRate2))
-      newPathogens <- bind_rows(newPathogens, newInfections)
-    }
+    
+    newInfections <- slice_sample(newInfections, n = round(nrow(newInfections)* infectionRates[indTree$species]))
+    newPathogens <- bind_rows(newPathogens, newInfections)
     
     
   }
@@ -237,14 +220,17 @@ pathGrowth <- function(trees){
 
 #Plot trees 
 plotSpecies(speciesPopulation) 
-totals <- speciesPopulation %>% mutate(total = (`Species 1` + `Species 2` + `Species 3`))
+totals <- speciesPopulation %>% mutate(total = rowSums(across(everything())))
 plot(totals$total, pch = 20, col = "cadetblue3")
-
 
 #Plot Pathogens
-plotSpecies(pathPop)
-totals <- pathPop %>% mutate(total = (`Species 1` + `Species 2` + `Species 3`))
+plotPaths(pathPop)
+totals <- pathPop %>% mutate(total = rowSums(across(everything())))
 plot(totals$total, pch = 20, col = "cadetblue3")
+
+
+#Plot both
+grid.arrange(plotSpecies(speciesPopulation), plotPaths(pathPop))
 
 #Plot the age distribution over time of trees
 agePops1 <-  pivot_longer(agePops, cols = !gen, names_to = "Group", values_to = "Count")
@@ -256,9 +242,12 @@ agePopGraph
 
 #Plot amount of each species
 plotSpecies <- function(speciesPopulation){
+  for(i in 1:numSpecies){
+    colnames(speciesPopulation)[i] <- paste0("Species", i)
+  }
   speciesPopulation <- add_column(speciesPopulation, gen = 1:nrow(speciesPopulation))
   speciesPopulation <- pivot_longer(speciesPopulation, cols = starts_with("Species"), names_to = "Species",
-                                    names_prefix = "Species ", values_to = "Count")
+                                    names_prefix = "Species", values_to = "Count")
   ggplot(data = speciesPopulation, aes(gen, Count, col = Species))+
     geom_point()+
     geom_line()+
@@ -267,16 +256,27 @@ plotSpecies <- function(speciesPopulation){
   
 }
 
-#Called from main for loop to track species
-speciesSize <- function(speciesTypes){
-  a = speciesTypes[speciesTypes == 1]
-  b = speciesTypes[speciesTypes == 2]
-  c = speciesTypes[speciesTypes == 3]
+#Plot amount of pathogenss
+plotPaths <- function(speciesPopulation){
+  for(i in 1:numSpecies){
+    colnames(speciesPopulation)[i] <- paste0("Species", i)
+  }
+  speciesPopulation <- add_column(speciesPopulation, gen = 1:nrow(speciesPopulation))
+  speciesPopulation <- pivot_longer(speciesPopulation, cols = starts_with("Species"), names_to = "Species",
+                                    names_prefix = "Species", values_to = "Count")
+  ggplot(data = speciesPopulation, aes(gen, Count, col = Species))+
+    geom_point()+
+    geom_line()+
+    ylim(0, max(speciesPopulation$Count))+
+    ylab("Pathogen Count")
   
-  df <- tibble("Species 1" = length(a), "Species 2" = length(b), "Species 3" = length(c))
-  return(df)
 }
 
-
-
-
+#Called from main for loop to track species
+speciesSize <- function(speciesTypes){
+  df = tibble()
+  for (i in 1:numSpecies){
+    df[1, i] = length(speciesTypes[speciesTypes == i])
+  }
+  return(df)
+}
