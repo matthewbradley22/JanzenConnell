@@ -14,6 +14,10 @@ library(gridExtra)
 #Place individuals on plot
 xsize = ysize = 100
 
+#Time invader comes in and number of invaders for adaptive dynamics
+invasionTime = 50
+numInvaders = 50
+
 numInd = 50
 numSpecies = 2
 residentSpecies = 1
@@ -22,7 +26,7 @@ residents <-  tibble("ID" = 1:numInd, "age" = 3,
                 species = residentSpecies, "xlocation" = runif(numInd, 0, 100), 
                 "ylocation" = runif(numInd,0,100), "parentalDistance" = 0, "Pathogen" = 0)
 
-invaders <- tibble("ID" = 1:numInd, "age" = 3, 
+invaders <- tibble("ID" = 1:numInvaders, "age" = 3, 
                    species = invaderSpecies, "xlocation" = runif(numInd, 0, 100), 
                    "ylocation" = runif(numInd,0,100), "parentalDistance" = 0, "Pathogen" = 0)
 
@@ -75,9 +79,7 @@ healthyDeathRate = 0.02
 #Dynamics get much more variable when value is ~0.04 or more. 0.02-0.04 pretty good for 0.7 infection Rate.
 infectedDeathRates = c(0.04,0.04)
 
-#Time invader comes in and number of invaders
-invasionTime = 50
-initInvaders = 50
+
 
 # Used for summary statistics
 speciesPopulation = NULL
@@ -316,3 +318,4 @@ speciesSize <- function(speciesTypes){
   }
   return(df)
 }
+
