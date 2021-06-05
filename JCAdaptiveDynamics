@@ -1,7 +1,6 @@
 #Adaptive dynamic script: invader and resident species 
 
-#This works but the "ID" column has issues where there are duplicates IDs. This does not cause any issues right now but if we ever have to track individual trees
-#for whatever reason this will need to be fixed (I'll still try to fix it now but not urgently)
+#Fixed an ID Bug that popped up. Everything works now i think
 
 #Load packages
 library(tidyverse) 
@@ -95,6 +94,7 @@ for(t in seq(0, numYears, by = deltaT)){
   #disperse seed
   if(t == invasionTime){
     totalPop <- rbind(residents, invaders)
+    totalPop[totalPop$species==2,]$ID = max(totalPop[totalPop$species==1,]$ID) + totalPop[totalPop$species==2,]$ID
   }
   if(t < invasionTime){
     data <- residents
@@ -187,7 +187,7 @@ dispersal <- function(Trees){
           parent = parents[i,]
           baby = parent
           baby$age = as.integer(0)
-          baby$ID  = max(max(Trees$ID, max(babies$ID))) + 1
+          baby$ID  = max(max(babies$ID),max(data$ID)) + 1
           baby$species  =  parent$species
           babyDist = (rnorm(1, mean=0, sd=dispParam))
           baby$Pathogen = 0
