@@ -79,23 +79,23 @@ for(t in seq(0, numYears, by = deltaT)){
     seedsPerSpecies <- c(seedsPerSpecies, numSeeds)
   }
   Ind = data[1, ]
-  babies <- dispersal(adults)
+  babies <- dispersal(adults, numSpecies, seedsPerSpecies, dispParam, xsize, ysize, data)
   data <- bind_rows(data, babies)
   
   #Background death of adults. Death rate decreases with age
-  data <- backgroundDeath(data)
+  data <- backgroundDeath(data, infectedDeathRates, healthyDeathRate)
   
   #Count number of each species
-  countSpecies <- speciesSize(data$species)
+  countSpecies <- speciesSize(data$species, numSpecies)
   speciesPopulation <-  bind_rows(speciesPopulation, countSpecies)
   
   #pathogens reproduce
-  newPathogens <- pathGrowth(data)
+  newPathogens <- pathGrowth(data,PathDensParam, xsize, infectionRates)
   data$Pathogen[which(data$ID %in% newPathogens$ID)] <- 1
   
   #Count number of pathogens
   countPaths <- data[data$Pathogen==1,]
-  pathAges <- speciesSize(countPaths$species)
+  pathAges <- speciesSize(countPaths$species, numSpecies)
   pathPop <- bind_rows(pathPop, pathAges)
   
   
@@ -135,7 +135,7 @@ carryingCapacity = function(species,speciesN, totalN, K){
 
 #Disperse x number of seeds per parent. 
 
-dispersal <- function(Trees){
+dispersal <- function(Trees, numSpecies, seedsPerSpecies, dispParam, xsize, ysize, data){
   babies = tibble()
   for(i in 1:numSpecies){
     speciesTree <- Trees[Trees$species == i,]
@@ -149,7 +149,7 @@ dispersal <- function(Trees){
           parent = parents[i,]
           baby = parent
           baby$age = as.integer(0)
-          baby$ID  = max(data$ID) + i + nrow(babies[babies$species != baby$species,])
+          baby$ID  = max(max(babies$ID),max(data$ID)) + 1
           baby$species  =  parent$species
           babyDist = (rnorm(1, mean=0, sd=dispParam))
           baby$Pathogen = 0
@@ -171,20 +171,20 @@ dispersal <- function(Trees){
 
 
 #Natural Background death
-backgroundDeath <- function(population){
+backgroundDeath <- function(data, infectedDeathRates, healthyDeathRate){
   living = c()
-  for (i in 1:nrow(population)){
-    if (population[i,]$Pathogen == 1){
+  for (i in 1:nrow(data)){
+    if (data[i,]$Pathogen == 1){
       alive <- (runif(1) > infectedDeathRates[data[i,]$species])
       living[i] = alive
     }
-    if(population[i,]$Pathogen == 0){
+    if(data[i,]$Pathogen == 0){
       alive <- (runif(1) > healthyDeathRate)
       living[i] = alive
     }
     
   }
-  return(population[living,])
+  return(data[living,])
 }
 
 
@@ -192,7 +192,7 @@ backgroundDeath <- function(population){
 
 #### virulence FUNCTIONS ######
 
-pathGrowth <- function(trees){
+pathGrowth <- function(data,PathDensParam, xsize, infectionRates){
   newPathogens <- NULL
   infectedTrees <- data[data$Pathogen == 1,]
   healthyTrees <- data[data$Pathogen == 0,]
@@ -273,11 +273,10 @@ plotPaths <- function(speciesPopulation){
 }
 
 #Called from main for loop to track species
-speciesSize <- function(speciesTypes){
+speciesSize <- function(speciesTypes, numSpecies){
   df = tibble()
   for (i in 1:numSpecies){
     df[1, i] = length(speciesTypes[speciesTypes == i])
   }
   return(df)
 }
-
