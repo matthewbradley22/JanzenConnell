@@ -49,7 +49,7 @@ growthrates = c(1,1)
 PathDensParam = 2.7
 
 
-infectionRates = c(0.7, 0.7)
+infectionRates = c(0.5, 0.5)
 
 #Has to stay lower than infected death rates. Slows growth to carrying capacity as it gets larger but
 # tree dynamics seem to be similar between 0.01 and 0.05, but pathogens end up growing much slower
@@ -57,7 +57,7 @@ infectionRates = c(0.7, 0.7)
 healthyDeathRate = 0.02
 
 #Dynamics get much more variable when value is ~0.04 or more. 0.02-0.04 pretty good for 0.7 infection Rate.
-infectedDeathRates = c(0.04,0.04)
+infectedDeathRates = c(0.2,0.2)
 # Used for summary statistics
 speciesPopulation = NULL
 pathPop = NULL
@@ -196,19 +196,23 @@ pathGrowth <- function(data,PathDensParam, xsize, infectionRates){
   newPathogens <- NULL
   infectedTrees <- data[data$Pathogen == 1,]
   healthyTrees <- data[data$Pathogen == 0,]
-  for (i in 1:nrow(infectedTrees)){
-    indTree = infectedTrees[i, ]
-    newInfections = subset(healthyTrees, xlocation > (indTree$xlocation - (PathDensParam))%% xsize
-                           & xlocation < (indTree$xlocation + (PathDensParam))%% xsize
-                           & ylocation > (indTree$ylocation - (PathDensParam))%% xsize
-                           & ylocation < (indTree$ylocation + (PathDensParam))%% xsize
-                           & species == indTree$species)
-    
-    newInfections <- slice_sample(newInfections, n = round(nrow(newInfections)* infectionRates[indTree$species]))
-    newPathogens <- bind_rows(newPathogens, newInfections)
-    
-    
+  if(nrow(infectedTrees) > 0){
+    for (i in 1:nrow(infectedTrees)){
+      indTree = infectedTrees[i, ]
+      newInfections = subset(healthyTrees, xlocation > (indTree$xlocation - (PathDensParam))%% xsize
+                             & xlocation < (indTree$xlocation + (PathDensParam))%% xsize
+                             & ylocation > (indTree$ylocation - (PathDensParam))%% xsize
+                             & ylocation < (indTree$ylocation + (PathDensParam))%% xsize
+                             & species == indTree$species)
+      newInfections <- slice_sample(newInfections, n = round(nrow(newInfections)* infectionRates[indTree$species]))
+      newPathogens <- bind_rows(newPathogens, newInfections)
+      
+    }
   }
+  if (nrow(infectedTrees) == 0){
+    newPathogens <- NULL
+  }
+  
   newPathogens <- newPathogens[!duplicated(newPathogens),]
   return(newPathogens)
 }
@@ -252,7 +256,8 @@ plotSpecies <- function(speciesPopulation){
     geom_point()+
     geom_line()+
     ylim(0, max(speciesPopulation$Count))+
-    ylab("Tree Count")
+    ylab("Tree Count")+
+    scale_color_manual(values=c("#bf5700", "#333f48"))
   
 }
 
@@ -268,7 +273,8 @@ plotPaths <- function(speciesPopulation){
     geom_point()+
     geom_line()+
     ylim(0, max(speciesPopulation$Count))+
-    ylab("Pathogen Count")
+    ylab("Pathogen Count")+
+    scale_color_manual(values=c("#bf5700", "#333f48"))
   
 }
 
@@ -280,4 +286,3 @@ speciesSize <- function(speciesTypes, numSpecies){
   }
   return(df)
 }
-
