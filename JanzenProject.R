@@ -9,6 +9,7 @@ library(gridExtra)
 # Set up a grid to represent land
 
 #Place individuals on plot
+par(mfrow = c(1, 1))
 xsize = ysize = 100
 
 numInd = 100
@@ -33,7 +34,7 @@ ageChange = deltaT
 dispParam = 8 #dispersalParam
 uniqueSp = unique(data$species)
 
-numYears = 500
+numYears = 5000
 
 #Carrying Capacity
 K= 2000
@@ -58,14 +59,14 @@ for(i in 1:numSpecies){
   data[data$species==i,]$Resistance = resistanceStrength[i]
 }
 
-data[data$Pathogen==1,]$pathStrength = data[data$Pathogen==1,]$Resistance + 0.1
+data[data$Pathogen==1,]$pathStrength = data[data$Pathogen==1,]$Resistance + 0.06
 #Has to stay lower than infected death rates. Slows growth to carrying capacity as it gets larger but
 # tree dynamics seem to be similar between 0.01 and 0.05, but pathogens end up growing much slower
 #and have larger swings as death rates increase
 healthyDeathRate = 0.02
 
 #Dynamics get much more variable when value is ~0.04 or more. 0.02-0.04 pretty good for 0.7 infection Rate.
-infectedDeathRates = c(0.05,0.05)
+infectedDeathRates = c(0.06,0.06)
 
 # Used for summary statistics
 speciesPopulation = NULL
@@ -79,7 +80,9 @@ avgResistance <- NULL
 
 
 for(t in seq(0, numYears, by = deltaT)){ 
-  
+  if(nrow(data[data$Pathogen == 1, ]) == 0 ){
+    break
+  }
   #disperse seed
   adults <- data[data$age > 3, ]
   seedsPerSpecies <- NULL
@@ -120,7 +123,7 @@ for(t in seq(0, numYears, by = deltaT)){
       data[i,]$pathStrength = 0
     }
   }
-  data$pathStrength[data$pathStrength>1] <- 1
+  
   pathStrengths <- c(pathStrengths, mean(data[data$Pathogen==1,]$pathStrength))
   #Count number of pathogens
   countPaths <- data[data$Pathogen==1,]
@@ -173,7 +176,8 @@ dispersal <- function(Trees, numSpecies, seedsPerSpecies, dispParam, xsize, ysiz
       #Before running this, we calculate seeds per species using the carrying capacity function
       numBabies <- round(seedsPerSpecies[i])
       #take a random sample of conspecific adult trees to disperse the seeds
-      parents <- slice_sample(speciesTree, n = numBabies, weight_by = 1/Resistance, replace = TRUE)
+      #weight_by = 1/Resistance, 
+      parents <- slice_sample(speciesTree, n = numBabies, replace = TRUE)
       if (nrow(parents)>0){
         for (i in 1:nrow(parents)){
           parent = parents[i,]
@@ -208,7 +212,8 @@ backgroundDeath <- function(data, infectedDeathRates, healthyDeathRate){
   for (i in 1:nrow(data)){
     if (data[i,]$Pathogen == 1){
       pathEffect <- data[i,]$pathStrength
-      alive <- (runif(1) > ((infectedDeathRates[data[i,]$species])*pathEffect))
+      chanceDeath <- max(((infectedDeathRates[data[i,]$species])*pathEffect), (healthyDeathRate + 0.01))
+      alive <- runif(1) > (chanceDeath)
       living[i] = alive
     }
     if(data[i,]$Pathogen == 0){
@@ -239,6 +244,7 @@ pathGrowth <- function(data,PathDensParam, xsize, infectionRates){
                              & species == indTree$species)
       newInfections <- slice_sample(newInfections, n = round(nrow(newInfections)* infectionRates[indTree$species]))
       newInfections$pathStrength = rnorm(n = nrow(newInfections), mean = indTree$pathStrength, sd = 0.05)
+      newInfections$pathStrength[newInfections$pathStrength>1] <- 1
       newPathogens <- bind_rows(newPathogens, newInfections)
       
     }
@@ -255,7 +261,7 @@ pathGrowth <- function(data,PathDensParam, xsize, infectionRates){
 
 ### SUPPLEMENTAL FUNCTIONS###
 
-
+  
 #Plot trees 
 plotSpecies(speciesPopulation)
 totals <- speciesPopulation %>% mutate(total = rowSums(across(everything())))
@@ -279,10 +285,13 @@ agePopGraph
 
 
 #Plot pathogen strengths over time
-plot(pathStrengths, xlab = "Gen", ylab = "Pathogen Strength")
+par(mfrow = c(1, 2))
+
+PSplot <- plot(pathStrengths, xlab = "Gen", ylab = "Pathogen Strength")
 
 #Plot resistance over time
-plot(avgResistance, xlab = "Gen", ylab = "Resistance")
+TRplot <- plot(avgResistance, xlab = "Gen", ylab = "Resistance")
+
 
 #Plot amount of each species
 plotSpecies <- function(speciesPopulation){
